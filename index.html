@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Py Data Desk | 离线数据处理指令库</title>
+    <meta
+      name="description"
+      content="一个可离线打开的 Python 数据处理指令查询网页，覆盖 pandas、numpy、seaborn 和 matplotlib 的常用写法。"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <p class="eyebrow">Offline Python Data Companion</p>
+          <h1>Py Data Desk</h1>
+          <p class="brand-copy">
+            面向 <code>pandas</code>、<code>numpy</code>、<code>seaborn</code>、
+            <code>matplotlib</code> 的常用数据处理指令查询页，支持中文和英文关键词，也支持按场景开始，直接双击网页即可使用。
+          </p>
+        </div>
+
+        <div class="topbar-meta" id="heroStats" aria-label="页面概览"></div>
+      </header>
+
+      <main class="workspace">
+        <aside class="sidebar panel" aria-label="筛选面板">
+          <section class="filter-section">
+            <div class="section-intro">
+              <p class="panel-label">Libraries</p>
+              <h2>库范围</h2>
+            </div>
+            <div id="libraryFilters" class="filter-stack"></div>
+          </section>
+
+          <section class="filter-section">
+            <div class="section-intro">
+              <p class="panel-label">Tasks</p>
+              <h2>任务类型</h2>
+            </div>
+            <div id="categoryFilters" class="category-grid"></div>
+          </section>
+
+          <section class="filter-section helper-section">
+            <div class="section-intro">
+              <p class="panel-label">Tips</p>
+              <h2>使用提示</h2>
+            </div>
+            <ul class="helper-list">
+              <li>按 <kbd>/</kbd> 可直接聚焦搜索框。</li>
+              <li>按 <kbd>Esc</kbd> 可快速清空当前关键词。</li>
+              <li>不确定搜什么时，可以先从中间的场景流程进入。</li>
+              <li>右侧会展示最小示例，适合直接复制改用。</li>
+            </ul>
+          </section>
+        </aside>
+
+        <section class="main-stage">
+          <section class="search-panel panel">
+            <div class="section-bar">
+              <div>
+                <p class="panel-label">Search</p>
+                <h2>查指令，而不是翻文档</h2>
+              </div>
+              <p class="panel-note">
+                试试搜索 <code>merge</code>、<code>缺失值</code>、
+                <code>heatmap</code>、<code>时间序列</code>
+              </p>
+            </div>
+
+            <div class="search-row">
+              <label class="search-box" for="searchInput">
+                <span>关键词</span>
+                <input
+                  id="searchInput"
+                  type="search"
+                  placeholder="输入 API、中文任务名或场景，例如：groupby、去重、折线图"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+              </label>
+              <button id="clearSearch" class="ghost-button" type="button">
+                清空
+              </button>
+            </div>
+
+            <div id="quickActions" class="quick-actions" aria-label="快捷检索"></div>
+            <div id="summaryStats" class="summary-stats" aria-live="polite"></div>
+          </section>
+
+          <section class="scenario-panel panel">
+            <div class="section-bar">
+              <div>
+                <p class="panel-label">Scenarios</p>
+                <h2>按场景开始</h2>
+              </div>
+              <p class="panel-note">
+                不确定该搜哪个 API 时，先从常见流程模板切入。
+              </p>
+            </div>
+
+            <div id="scenarioRail" class="scenario-rail" aria-label="场景导航"></div>
+            <div id="scenarioDetail" class="scenario-detail" aria-live="polite"></div>
+          </section>
+
+          <section class="results-panel panel" aria-label="结果列表">
+            <div class="section-bar">
+              <div>
+                <p class="panel-label">Results</p>
+                <h2>匹配结果</h2>
+              </div>
+              <p id="resultCount" class="result-count" aria-live="polite"></p>
+            </div>
+
+            <div id="resultsList" class="results-list" role="listbox"></div>
+
+            <div id="emptyState" class="empty-state" hidden>
+              <p class="empty-title">没有找到匹配项</p>
+              <p class="empty-copy">
+                可以换一个关键词，或者点击上方快捷入口重新筛选。
+              </p>
+            </div>
+          </section>
+        </section>
+
+        <aside class="detail-panel panel" aria-label="详情面板">
+          <div class="section-bar">
+            <div>
+              <p class="panel-label">Inspector</p>
+              <h2>指令详情</h2>
+            </div>
+            <button id="copyCodeButton" class="ghost-button" type="button">
+              复制示例
+            </button>
+          </div>
+
+          <div id="detailView" class="detail-view" aria-live="polite"></div>
+        </aside>
+      </main>
+
+      <footer class="footer-note">
+        <p>
+          所有指令数据都内置在本地脚本中，不依赖后端或外部字体；在
+          <code>file://</code> 模式下也可以正常检索。
+        </p>
+      </footer>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
