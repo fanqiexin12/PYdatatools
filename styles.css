@@ -186,7 +186,7 @@ body.is-ready .footer-note {
 
 .workspace {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 420px;
+  grid-template-columns: 260px minmax(0, 1fr) 460px;
   gap: 1rem;
   align-items: start;
 }
@@ -213,6 +213,12 @@ body.is-ready .footer-note {
 .detail-panel {
   position: sticky;
   top: 1rem;
+}
+
+.detail-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: calc(100vh - 2rem);
 }
 
 .sidebar {
@@ -681,12 +687,42 @@ kbd {
 .detail-view {
   display: grid;
   gap: 1rem;
+  overflow: auto;
+  padding-right: 0.2rem;
 }
 
 .detail-header h3 {
   margin: 0;
   font-size: 1.5rem;
   letter-spacing: -0.04em;
+}
+
+.detail-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.detail-kpi {
+  padding: 0.85rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.detail-kpi-value {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.detail-kpi-label {
+  display: block;
+  margin-top: 0.18rem;
+  color: var(--muted);
+  font-size: 0.84rem;
 }
 
 .detail-copy {
@@ -733,6 +769,55 @@ kbd {
 
 .detail-list li + li {
   margin-top: 0.42rem;
+}
+
+.parameter-list,
+.example-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.parameter-card,
+.example-card {
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.parameter-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.parameter-meaning,
+.parameter-detail,
+.example-note {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.example-meta {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.example-meta h5 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.example-copy-button {
+  min-width: 6.2rem;
+}
+
+.example-card .code-block {
+  margin-top: 0.9rem;
 }
 
 .placeholder {
@@ -783,6 +868,7 @@ kbd {
   .detail-panel {
     position: static;
     grid-column: 1 / -1;
+    max-height: none;
   }
 }
 
@@ -837,7 +923,7 @@ kbd {
     text-align: left;
   }
 
-  .ghost-button {
+  .ghost-button:not(.example-copy-button) {
     width: 100%;
   }
 
@@ -853,6 +939,14 @@ kbd {
   .result-topline {
     flex-direction: column;
     align-items: start;
+  }
+
+  .detail-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .example-meta {
+    flex-direction: column;
   }
 }
 

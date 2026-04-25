@@ -168,13 +168,14 @@ const scenarios = [
   },
 ]
 
-const createCommand = ({ when, tips, keywords, related, ...rest }) => ({
-  when: when ?? rest.summary,
-  tips: tips ?? [],
-  keywords: keywords ?? [],
-  related: related ?? [],
-  ...rest,
-})
+const createCommand = ({ when, tips, keywords, related, ...rest }) =>
+  buildCommandRecord({
+    when: when ?? rest.summary,
+    tips: tips ?? [],
+    keywords: keywords ?? [],
+    related: related ?? [],
+    ...rest,
+  })
 
 const commands = [
   createCommand({
@@ -653,7 +654,7 @@ print(merged[["order_id", "user_name", "city_name"]].head())`,
       "先明确 on、left_on、right_on，避免误连。",
       "合并后可检查记录数和主键唯一性，防止意外放大数据量。",
     ],
-    related: ["pd-concat", "pd-drop-duplicates", "pd-groupby-agg"],
+    related: ["pd-merge-asof", "pd-merge-ordered", "pd-concat", "pd-groupby-agg"],
   }),
   createCommand({
     id: "pd-concat",
@@ -2356,5 +2357,494 @@ plt.tight_layout()
 plt.show()`,
     keywords: ["stackplot", "堆叠面积图", "组成变化"],
     related: ["plt-fill-between", "plt-plot", "sns-lineplot"],
+  }),
+  createCommand({
+    id: "pd-read-json",
+    library: "pandas",
+    category: "io",
+    title: "read_json()",
+    alias: "读取 JSON / JSON Lines",
+    summary: "适合处理接口返回、日志落盘或嵌套结构较轻的 JSON 数据源。",
+    syntax: 'pd.read_json("events.json", lines=True)',
+    code: `import pandas as pd
+
+events = pd.read_json("events.json", lines=True)
+print(events.head())`,
+    keywords: ["json", "json lines", "读取接口结果", "读取日志"],
+    related: ["pd-read-csv", "pd-json-normalize", "pd-head"],
+  }),
+  createCommand({
+    id: "pd-read-parquet",
+    library: "pandas",
+    category: "io",
+    title: "read_parquet()",
+    alias: "读取 Parquet 文件",
+    summary: "适合分析型数据仓库导出的列式文件，读取速度和列裁剪能力都更好。",
+    syntax: 'pd.read_parquet("sales.parquet", columns=["order_id", "sales"])',
+    code: `import pandas as pd
+
+sales = pd.read_parquet(
+    "sales.parquet",
+    columns=["order_id", "order_date", "sales"]
+)
+print(sales.head())`,
+    keywords: ["parquet", "列式文件", "仓库导出", "读取 parquet"],
+    related: ["pd-read-csv", "pd-read-excel", "pd-to-excel-csv"],
+  }),
+  createCommand({
+    id: "pd-json-normalize",
+    library: "pandas",
+    category: "transform",
+    title: "json_normalize()",
+    alias: "展开嵌套 JSON 结构",
+    summary: "把嵌套字典或列表结构摊平成表格列，适合接口响应和事件日志解析。",
+    syntax: 'pd.json_normalize(data, record_path="items", meta=["order_id"])',
+    code: `import pandas as pd
+
+payload = [
+    {
+        "order_id": 101,
+        "customer": "A",
+        "items": [{"sku": "s1", "qty": 2}, {"sku": "s2", "qty": 1}],
+    }
+]
+
+items = pd.json_normalize(payload, record_path="items", meta=["order_id", "customer"])
+print(items)`,
+    keywords: ["json normalize", "嵌套 json", "展开接口数据", "record_path"],
+    related: ["pd-read-json", "pd-explode", "pd-melt"],
+  }),
+  createCommand({
+    id: "pd-merge-asof",
+    library: "pandas",
+    category: "join",
+    title: "merge_asof()",
+    alias: "按最近时间点连接",
+    summary: "适合成交数据对齐最近报价、事件数据对齐最近状态等时间邻近型连接。",
+    syntax: 'pd.merge_asof(trades, quotes, on="ts", by="symbol")',
+    code: `trades = trades.sort_values("ts")
+quotes = quotes.sort_values("ts")
+
+aligned = pd.merge_asof(
+    trades,
+    quotes,
+    on="ts",
+    by="symbol",
+    direction="backward"
+)
+
+print(aligned.head())`,
+    keywords: ["merge_asof", "最近时间连接", "时序对齐", "quote trade"],
+    related: ["pd-merge", "pd-merge-ordered", "pd-to-datetime"],
+  }),
+  createCommand({
+    id: "pd-merge-ordered",
+    library: "pandas",
+    category: "join",
+    title: "merge_ordered()",
+    alias: "有序连接并保留时间顺序",
+    summary: "适合把两个都带时间顺序的数据源按键对齐，并沿时间补齐缺口。",
+    syntax: 'pd.merge_ordered(left, right, on="date", fill_method="ffill")',
+    code: `timeline = pd.merge_ordered(
+    sales,
+    budget,
+    on="date",
+    fill_method="ffill"
+)
+
+print(timeline.head())`,
+    keywords: ["merge ordered", "有序连接", "时间对齐", "ffill join"],
+    related: ["pd-merge", "pd-merge-asof", "pd-resample"],
+  }),
+  createCommand({
+    id: "pd-interpolate",
+    library: "pandas",
+    category: "clean",
+    title: "interpolate()",
+    alias: "插值填补缺失值",
+    summary: "适合时间序列或连续数值字段的平滑补值，比常量补值更保留趋势。",
+    syntax: 'df["sales"] = df["sales"].interpolate(method="linear")',
+    code: `df = df.sort_values("order_date")
+df["sales"] = df["sales"].interpolate(method="linear")
+
+print(df.head())`,
+    keywords: ["interpolate", "插值", "线性补值", "时间序列补值"],
+    related: ["pd-fillna", "pd-rolling", "pd-to-datetime"],
+  }),
+  createCommand({
+    id: "pd-reindex",
+    library: "pandas",
+    category: "reshape",
+    title: "reindex()",
+    alias: "按目标索引重排和补齐",
+    summary: "适合对齐标准日期索引、补全缺失分类，或把结果重排成既定顺序。",
+    syntax: 'df.reindex(index=target_index, fill_value=0)',
+    code: `target_months = ["2026-01", "2026-02", "2026-03", "2026-04"]
+report = report.reindex(target_months, fill_value=0)
+
+print(report)`,
+    keywords: ["reindex", "补齐索引", "重排", "对齐标准顺序"],
+    related: ["pd-set-reset-index", "pd-resample", "pd-sort-values"],
+  }),
+  createCommand({
+    id: "pd-eval",
+    library: "pandas",
+    category: "transform",
+    title: "eval()",
+    alias: "用表达式批量计算字段",
+    summary: "适合把多列运算写成紧凑表达式，尤其在字段较多时可提升可读性。",
+    syntax: 'df.eval("profit = sales - cost")',
+    code: `df = df.eval(
+    "profit = sales - cost"
+).eval(
+    "margin = profit / sales"
+)
+
+print(df.head())`,
+    keywords: ["eval", "表达式计算", "profit", "字段公式"],
+    related: ["pd-assign", "pd-query", "pd-map"],
+  }),
+  createCommand({
+    id: "pd-insert",
+    library: "pandas",
+    category: "transform",
+    title: "insert()",
+    alias: "按指定位置插入新列",
+    summary: "适合需要控制列顺序的报表整理或导出前字段编排。",
+    syntax: 'df.insert(1, "profit", df["sales"] - df["cost"])',
+    code: `df.insert(
+    1,
+    "profit",
+    df["sales"] - df["cost"]
+)
+
+print(df.head())`,
+    keywords: ["insert", "插入新列", "控制列顺序", "报表整理"],
+    related: ["pd-assign", "pd-rename", "pd-to-excel-csv"],
+  }),
+  createCommand({
+    id: "pd-wide-to-long",
+    library: "pandas",
+    category: "reshape",
+    title: "wide_to_long()",
+    alias: "按前缀把宽表转成长表",
+    summary: "适合季度、月份或多指标列带编号前缀的数据结构重整。",
+    syntax: 'pd.wide_to_long(df, stubnames=["sales"], i="store", j="month", sep="_")',
+    code: `long_df = pd.wide_to_long(
+    df,
+    stubnames=["sales", "cost"],
+    i="store",
+    j="month",
+    sep="_"
+).reset_index()
+
+print(long_df.head())`,
+    keywords: ["wide_to_long", "宽转长", "stubnames", "月份列展开"],
+    related: ["pd-melt", "pd-pivot", "pd-unstack-stack"],
+  }),
+  createCommand({
+    id: "np-stack",
+    library: "numpy",
+    category: "reshape",
+    title: "np.stack()",
+    alias: "沿新轴堆叠数组",
+    summary: "适合把多组同形状数组合成更高维结构，例如批量样本或多通道数据。",
+    syntax: "np.stack([a, b, c], axis=0)",
+    code: `import numpy as np
+
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
+
+stacked = np.stack([a, b], axis=0)
+print(stacked)`,
+    keywords: ["stack", "新轴堆叠", "多维数组", "axis"],
+    related: ["np-concatenate", "np-vstack-hstack", "np-reshape"],
+  }),
+  createCommand({
+    id: "np-column-stack",
+    library: "numpy",
+    category: "reshape",
+    title: "np.column_stack()",
+    alias: "按列拼接一维数组",
+    summary: "适合把多个同长度向量快速组织成二维特征矩阵。",
+    syntax: "np.column_stack([x1, x2, x3])",
+    code: `import numpy as np
+
+city_id = np.array([1, 2, 3])
+sales = np.array([120, 150, 170])
+
+matrix = np.column_stack([city_id, sales])
+print(matrix)`,
+    keywords: ["column_stack", "按列拼接", "特征矩阵", "二维数组"],
+    related: ["np-stack", "np-vstack-hstack", "np-concatenate"],
+  }),
+  createCommand({
+    id: "np-split-array-split",
+    library: "numpy",
+    category: "reshape",
+    title: "split() / array_split()",
+    alias: "把数组拆成多段",
+    summary: "适合批处理、交叉验证切片或把长向量拆成固定块。",
+    syntax: "np.array_split(arr, 3)",
+    code: `import numpy as np
+
+arr = np.arange(10)
+parts = np.array_split(arr, 3)
+
+for part in parts:
+    print(part)`,
+    keywords: ["split", "array_split", "拆分数组", "批处理"],
+    related: ["np-stack", "np-repeat-tile", "np-reshape"],
+  }),
+  createCommand({
+    id: "np-pad",
+    library: "numpy",
+    category: "numeric",
+    title: "np.pad()",
+    alias: "给数组补边界",
+    summary: "适合卷积前补边、时间窗扩展或对齐不同长度数组。",
+    syntax: 'np.pad(arr, pad_width=1, mode="constant", constant_values=0)',
+    code: `import numpy as np
+
+arr = np.array([3, 5, 8])
+padded = np.pad(arr, pad_width=2, mode="constant", constant_values=0)
+
+print(padded)`,
+    keywords: ["pad", "补边界", "constant", "reflect"],
+    related: ["np-repeat-tile", "np-reshape", "np-stack"],
+  }),
+  createCommand({
+    id: "np-bincount",
+    library: "numpy",
+    category: "numeric",
+    title: "np.bincount()",
+    alias: "统计非负整数频数",
+    summary: "适合类别编码后的快速计数，比通用聚合更轻量。",
+    syntax: "np.bincount(labels)",
+    code: `import numpy as np
+
+labels = np.array([0, 1, 1, 2, 2, 2])
+counts = np.bincount(labels)
+
+print(counts)`,
+    keywords: ["bincount", "频数统计", "整数类别", "count labels"],
+    related: ["np-unique", "np-histogram", "np-any-all"],
+  }),
+  createCommand({
+    id: "np-any-all",
+    library: "numpy",
+    category: "numeric",
+    title: "np.any() / np.all()",
+    alias: "检查条件是否任意满足或全部满足",
+    summary: "适合做质量校验、约束检查和布尔矩阵汇总。",
+    syntax: "np.all(arr > 0)",
+    code: `import numpy as np
+
+arr = np.array([3, 6, 9, 12])
+print(np.any(arr > 10))
+print(np.all(arr > 0))`,
+    keywords: ["any", "all", "条件校验", "布尔汇总"],
+    related: ["np-logical-ops", "np-where", "np-isnan-isfinite"],
+  }),
+  createCommand({
+    id: "sns-lmplot",
+    library: "seaborn",
+    category: "plot",
+    title: "sns.lmplot()",
+    alias: "散点加回归趋势线",
+    summary: "适合快速观察两个变量之间的大致线性关系和分组趋势。",
+    syntax: 'sns.lmplot(data=df, x="ad_cost", y="sales", hue="channel")',
+    code: `import seaborn as sns
+
+sns.lmplot(
+    data=df,
+    x="ad_cost",
+    y="sales",
+    hue="channel",
+    height=4,
+    aspect=1.3
+)`,
+    keywords: ["lmplot", "回归线", "线性关系", "scatter trend"],
+    related: ["sns-regplot", "sns-scatterplot", "sns-relplot"],
+  }),
+  createCommand({
+    id: "sns-ecdfplot",
+    library: "seaborn",
+    category: "plot",
+    title: "sns.ecdfplot()",
+    alias: "经验累计分布图",
+    summary: "适合比较不同分组的分布差异，不依赖分箱边界设置。",
+    syntax: 'sns.ecdfplot(data=df, x="sales", hue="channel")',
+    code: `import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.ecdfplot(data=df, x="sales", hue="channel")
+plt.tight_layout()
+plt.show()`,
+    keywords: ["ecdfplot", "累计分布", "分布比较", "cdf"],
+    related: ["sns-histplot", "sns-kdeplot", "sns-displot"],
+  }),
+  createCommand({
+    id: "sns-facetgrid",
+    library: "seaborn",
+    category: "plot",
+    title: "sns.FacetGrid()",
+    alias: "按维度拆分多个小图",
+    summary: "适合按城市、渠道或实验组拆成多个面板做同尺度对比。",
+    syntax: 'sns.FacetGrid(df, col="channel", row="region")',
+    code: `import seaborn as sns
+import matplotlib.pyplot as plt
+
+grid = sns.FacetGrid(df, col="channel", col_wrap=2, height=3.2)
+grid.map_dataframe(sns.histplot, x="sales", bins=20)
+grid.fig.tight_layout()`,
+    keywords: ["facetgrid", "分面", "多个小图", "col row"],
+    related: ["sns-relplot", "sns-catplot", "plt-subplots"],
+  }),
+  createCommand({
+    id: "sns-despine",
+    library: "seaborn",
+    category: "plot",
+    title: "sns.despine()",
+    alias: "去掉图表边框线",
+    summary: "适合做更干净的报告风格图表，尤其是横向条形图和简洁折线图。",
+    syntax: "sns.despine(top=True, right=True)",
+    code: `import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.barplot(data=df, x="city", y="sales")
+sns.despine(top=True, right=True)
+plt.tight_layout()
+plt.show()`,
+    keywords: ["despine", "去边框", "简洁风格", "report chart"],
+    related: ["sns-set-theme", "plt-style-use", "plt-grid-legend"],
+  }),
+  createCommand({
+    id: "plt-subplot-mosaic",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.subplot_mosaic()",
+    alias: "用命名布局管理子图",
+    summary: "适合仪表板式布局，比单纯 nrows / ncols 更适合不规则版式。",
+    syntax: 'fig, axes = plt.subplot_mosaic([["trend", "share"], ["trend", "dist"]])',
+    code: `import matplotlib.pyplot as plt
+
+fig, axes = plt.subplot_mosaic(
+    [["trend", "share"], ["trend", "dist"]],
+    figsize=(8, 5)
+)
+
+axes["trend"].plot([1, 2, 3], [12, 16, 15])
+axes["share"].bar(["A", "B"], [60, 40])
+axes["dist"].hist([12, 13, 15, 16, 18], bins=4)
+
+fig.tight_layout()`,
+    keywords: ["subplot mosaic", "命名子图", "不规则布局", "dashboard"],
+    related: ["plt-subplots", "plt-figure", "sns-facetgrid"],
+  }),
+  createCommand({
+    id: "plt-axspan",
+    library: "matplotlib",
+    category: "plot",
+    title: "axvspan() / axhspan()",
+    alias: "高亮一个区间带",
+    summary: "适合标记活动期、预警区间、正常范围或实验窗口。",
+    syntax: 'plt.axvspan("2026-01", "2026-02", alpha=0.2)',
+    code: `import matplotlib.pyplot as plt
+
+plt.figure(figsize=(7, 4))
+plt.plot([1, 2, 3, 4], [10, 15, 13, 20])
+plt.axvspan(2, 3, color="#1f6f78", alpha=0.18)
+plt.tight_layout()
+plt.show()`,
+    keywords: ["axvspan", "axhspan", "高亮区间", "活动期"],
+    related: ["plt-axhline-axvline", "plt-fill-between", "plt-annotate"],
+  }),
+  createCommand({
+    id: "plt-contourf",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.contourf()",
+    alias: "填充等高线图",
+    summary: "适合展示二维数值面、概率密度或实验参数网格的连续变化。",
+    syntax: "plt.contourf(X, Y, Z, levels=12, cmap='viridis')",
+    code: `import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(-3, 3, 60)
+y = np.linspace(-3, 3, 60)
+X, Y = np.meshgrid(x, y)
+Z = np.sin(X) * np.cos(Y)
+
+plt.figure(figsize=(6, 4))
+plt.contourf(X, Y, Z, levels=12, cmap="viridis")
+plt.colorbar()
+plt.tight_layout()
+plt.show()`,
+    keywords: ["contourf", "等高线", "二维数值面", "meshgrid"],
+    related: ["plt-imshow", "plt-colorbar", "sns-heatmap"],
+  }),
+  createCommand({
+    id: "plt-step",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.step()",
+    alias: "阶梯图",
+    summary: "适合库存、价格档位或状态切换这类分段常值过程。",
+    syntax: 'plt.step(x, y, where="post")',
+    code: `import matplotlib.pyplot as plt
+
+x = [1, 2, 3, 4, 5]
+y = [10, 10, 14, 14, 18]
+
+plt.figure(figsize=(7, 4))
+plt.step(x, y, where="post")
+plt.tight_layout()
+plt.show()`,
+    keywords: ["step", "阶梯图", "分段常值", "where post"],
+    related: ["plt-plot", "plt-stackplot", "sns-lineplot"],
+  }),
+  createCommand({
+    id: "plt-stem",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.stem()",
+    alias: "杆状离散图",
+    summary: "适合强调离散点的数值高度，比如频谱、残差或按序号的离散指标。",
+    syntax: "plt.stem(x, y)",
+    code: `import matplotlib.pyplot as plt
+
+x = [1, 2, 3, 4]
+y = [3, 7, 4, 9]
+
+plt.figure(figsize=(7, 4))
+plt.stem(x, y)
+plt.tight_layout()
+plt.show()`,
+    keywords: ["stem", "杆状图", "离散点", "频谱"],
+    related: ["plt-bar", "plt-scatter", "plt-step"],
+  }),
+  createCommand({
+    id: "plt-secondary-axis",
+    library: "matplotlib",
+    category: "plot",
+    title: "secondary_xaxis() / secondary_yaxis()",
+    alias: "添加换算后的第二坐标轴",
+    summary: "适合温度单位换算、汇率换算或同一指标的双度量展示。",
+    syntax: "ax.secondary_yaxis('right', functions=(fwd, inv))",
+    code: `import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.plot([0, 10, 20, 30], [32, 50, 68, 86])
+ax.set_ylabel("Fahrenheit")
+
+ax.secondary_yaxis(
+    "right",
+    functions=(lambda f: (f - 32) * 5 / 9, lambda c: c * 9 / 5 + 32)
+).set_ylabel("Celsius")
+
+fig.tight_layout()`,
+    keywords: ["secondary axis", "第二坐标轴", "单位换算", "temperature"],
+    related: ["plt-twinx", "plt-xlim-ylim", "plt-subplots"],
   }),
 ]

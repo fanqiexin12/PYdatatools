@@ -10,6 +10,10 @@ const indexedCommands = commands.map((command) => ({
     categoryMeta[command.category]?.label ?? "",
     command.keywords.join(" "),
     command.tips.join(" "),
+    command.recommendedUse.join(" "),
+    command.professionalDetail,
+    command.parameters.map((item) => `${item.name} ${item.meaning} ${item.detail}`).join(" "),
+    command.examples.map((item) => `${item.title} ${item.note} ${item.code}`).join(" "),
   ]
     .join(" ")
     .toLowerCase(),
@@ -384,7 +388,7 @@ function renderDetail() {
     refs.copyCodeButton.disabled = true
     refs.detailView.innerHTML = `
       <div class="placeholder">
-        <p>左侧筛选、中间结果或场景步骤都可以驱动这里的详情和示例。</p>
+        <p>左侧筛选、中间结果或场景步骤都可以驱动这里的详情、参数说明和示例卡片。</p>
       </div>
     `
     return
@@ -413,6 +417,45 @@ function renderDetail() {
     .map((tip) => `<li>${escapeHtml(tip)}</li>`)
     .join("")
 
+  const recommendationItems = command.recommendedUse
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join("")
+
+  const parameterMarkup = command.parameters
+    .map(
+      (param) => `
+        <article class="parameter-card">
+          <div class="parameter-name">${escapeHtml(param.name)}</div>
+          <p class="parameter-meaning">${escapeHtml(param.meaning)}</p>
+          <p class="parameter-detail">${escapeHtml(param.detail)}</p>
+        </article>
+      `
+    )
+    .join("")
+
+  const exampleMarkup = command.examples
+    .map(
+      (example, index) => `
+        <article class="example-card">
+          <div class="example-meta">
+            <div>
+              <h5>${escapeHtml(example.title)}</h5>
+              <p class="example-note">${escapeHtml(example.note)}</p>
+            </div>
+            <button
+              class="ghost-button example-copy-button"
+              type="button"
+              data-example-index="${index}"
+            >
+              复制此例
+            </button>
+          </div>
+          <pre class="code-block"><code>${escapeHtml(example.code)}</code></pre>
+        </article>
+      `
+    )
+    .join("")
+
   refs.copyCodeButton.disabled = false
   refs.detailView.innerHTML = `
     <section class="detail-header">
@@ -424,11 +467,30 @@ function renderDetail() {
       </div>
       <h3>${escapeHtml(command.title)}</h3>
       <p class="detail-copy">${escapeHtml(command.summary)}</p>
+      <div class="detail-kpis">
+        <article class="detail-kpi">
+          <span class="detail-kpi-value">${command.parameters.length}</span>
+          <span class="detail-kpi-label">核心参数</span>
+        </article>
+        <article class="detail-kpi">
+          <span class="detail-kpi-value">${command.examples.length}</span>
+          <span class="detail-kpi-label">使用示例</span>
+        </article>
+        <article class="detail-kpi">
+          <span class="detail-kpi-value">${command.related.length}</span>
+          <span class="detail-kpi-label">相关命令</span>
+        </article>
+      </div>
     </section>
 
     <section class="detail-section">
-      <h4>适用场景</h4>
-      <p class="detail-copy">${escapeHtml(command.when)}</p>
+      <h4>建议使用</h4>
+      <ul class="detail-list">${recommendationItems}</ul>
+    </section>
+
+    <section class="detail-section">
+      <h4>专业说明</h4>
+      <p class="detail-copy">${escapeHtml(command.professionalDetail)}</p>
     </section>
 
     <section class="detail-section">
@@ -437,8 +499,13 @@ function renderDetail() {
     </section>
 
     <section class="detail-section">
-      <h4>最小示例</h4>
-      <pre class="code-block"><code>${escapeHtml(command.code)}</code></pre>
+      <h4>参数说明</h4>
+      <div class="parameter-list">${parameterMarkup}</div>
+    </section>
+
+    <section class="detail-section">
+      <h4>多示例</h4>
+      <div class="example-list">${exampleMarkup}</div>
     </section>
 
     <section class="detail-section">
@@ -535,9 +602,13 @@ function selectCommand(id, options = {}) {
 }
 
 async function copyText(text) {
-  if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(text)
-    return
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return
+    } catch (error) {
+      // Fall through to the textarea fallback for browsers that block clipboard on file://.
+    }
   }
 
   const textarea = document.createElement("textarea")
@@ -546,7 +617,9 @@ async function copyText(text) {
   textarea.style.position = "fixed"
   textarea.style.top = "-9999px"
   document.body.append(textarea)
+  textarea.focus()
   textarea.select()
+  textarea.setSelectionRange(0, textarea.value.length)
 
   const copied = document.execCommand("copy")
   textarea.remove()
@@ -641,14 +714,39 @@ function bindEvents() {
 
   refs.detailView.addEventListener("click", (event) => {
     const button = event.target.closest("[data-related-id]")
-    if (!button) {
+    if (button) {
+      selectCommand(button.dataset.relatedId, {
+        syncFilters: true,
+        clearSearchIfHidden: true,
+      })
       return
     }
 
-    selectCommand(button.dataset.relatedId, {
-      syncFilters: true,
-      clearSearchIfHidden: true,
-    })
+    const exampleButton = event.target.closest("[data-example-index]")
+    if (!exampleButton) {
+      return
+    }
+
+    const command = getCommandById(state.selectedId)
+    const example = command?.examples?.[Number(exampleButton.dataset.exampleIndex)]
+    if (!example) {
+      return
+    }
+
+    const originalLabel = exampleButton.textContent
+
+    copyText(example.code)
+      .then(() => {
+        exampleButton.textContent = "已复制"
+      })
+      .catch(() => {
+        exampleButton.textContent = "复制失败"
+      })
+      .finally(() => {
+        window.setTimeout(() => {
+          exampleButton.textContent = originalLabel
+        }, 1400)
+      })
   })
 
   refs.copyCodeButton.addEventListener("click", async () => {
@@ -660,7 +758,7 @@ function bindEvents() {
     const originalLabel = refs.copyCodeButton.textContent
 
     try {
-      await copyText(command.code)
+      await copyText(command.examples[0]?.code ?? command.code)
       refs.copyCodeButton.textContent = "已复制"
     } catch (error) {
       refs.copyCodeButton.textContent = "复制失败"
