@@ -443,6 +443,18 @@ const categoryAdvice = {
     "先确认数组形状和 dtype，再做广播或矩阵运算。",
     "向量化数值计算适合批量处理，但维度错位会让结果悄悄出错。",
   ],
+  stats: [
+    "先确认假设检验的前提条件，再解释 p 值和统计量。",
+    "检验前最好先检查样本量、异常值和分布形态，避免机械套用。",
+  ],
+  optimize: [
+    "优化问题先写清楚目标函数、约束和初始值，再关注算法选择。",
+    "求解结果除了看最优值，也要检查是否收敛以及参数是否有业务意义。",
+  ],
+  signal: [
+    "信号处理类方法很适合平滑、峰值检测和卷积，但要避免过度处理掩盖真实结构。",
+    "滤波前先确认采样频率、窗口大小和边界处理方式。",
+  ],
   plot: [
     "先确认数据结构是否适合当前图表，再调颜色、注释和版式。",
     "图表完成后最好补标题、轴标签和保存参数，方便直接复用到报告。",
@@ -455,6 +467,9 @@ const libraryAdvice = {
   ],
   numpy: [
     "numpy 的性能优势来自向量化和广播，维度和 dtype 是最值得先确认的两件事。",
+  ],
+  scipy: [
+    "scipy 更偏算法与统计推断，除了会用 API，更要清楚前提假设和参数口径。",
   ],
   seaborn: [
     "seaborn 更擅长统计图和长表输入，分组字段太多时要主动收敛视觉层次。",
@@ -484,6 +499,12 @@ const categoryProfessional = {
     "时间类 API 对排序、频率、时区、窗口边界和缺失期的处理都非常敏感。",
   numeric:
     "数值计算类 API 的核心是广播规则、轴语义、精度和 NaN 传播行为。",
+  stats:
+    "统计推断类 API 的关键在于原假设、样本独立性、分布假设以及输出统计量的解释方式。",
+  optimize:
+    "优化类 API 的重点是目标函数是否光滑、约束形式、初始值敏感性以及收敛状态解读。",
+  signal:
+    "信号处理类 API 需要关注窗口长度、边界条件、采样频率以及是否引入相位偏移。",
   plot:
     "绘图类 API 除了图形本身，还要关注输入表结构、聚合口径和最终输出清晰度。",
 }
@@ -493,6 +514,8 @@ const libraryProfessional = {
     "在 pandas 里，是否返回新对象、是否保留索引，以及链式调用中的对齐行为，是理解结果的关键。",
   numpy:
     "在 numpy 里，很多函数默认返回 ndarray；广播失败或 dtype 提升往往是定位问题的第一入口。",
+  scipy:
+    "在 scipy 里，很多函数返回的不只是数值本身，还会附带检验统计量、拟合参数、协方差或求解状态信息。",
   seaborn:
     "在 seaborn 里，很多图默认会做统计聚合或置信区间估计，专业使用时要主动确认估计口径。",
   matplotlib:
@@ -559,6 +582,15 @@ function buildGenericParameters(command) {
       getParam("axis_numpy"),
       getParam("dtype"),
       getParam("shape"),
+    ]
+  }
+
+  if (command.library === "scipy") {
+    return [
+      getParam("x"),
+      getParam("y"),
+      getParam("method"),
+      getParam("axis_numpy"),
     ]
   }
 
@@ -1047,6 +1079,16 @@ function buildParameterDocs(command) {
         meaning: "linspace 中生成的点数。",
         detail: "比固定步长更适合画图采样和等分区间。",
       })]
+    case "np-meshgrid":
+      return [getParam("x"), getParam("y"), getParam("indexing", {
+        name: "indexing",
+        meaning: "控制网格坐标的索引方式。",
+        detail: "xy 更贴近绘图习惯，ij 更贴近矩阵索引习惯。",
+      }), getParam("sparse", {
+        name: "sparse",
+        meaning: "是否生成稀疏网格。",
+        detail: "大网格场景能明显节省内存。",
+      })]
     case "np-random":
       return [getParam("loc"), getParam("scale"), getParam("size"), getParam("seed", {
         name: "seed",
@@ -1093,13 +1135,399 @@ function buildParameterDocs(command) {
     case "np-clip":
     case "np-nan-to-num":
     case "np-pad":
+    case "np-einsum":
       return [getParam("a"), getParam("x"), getParam("y"), getParam("dtype"), getParam("mode", {
         name: "mode",
         meaning: "pad 等函数中的边界填充策略。",
         detail: "constant、edge、reflect 的语义差别很大。",
       })]
+    case "np-linalg-solve":
+      return [getParam("a", {
+        meaning: "系数矩阵。",
+        detail: "通常要求是方阵且满秩，才能稳定求解线性方程组。",
+      }), getParam("b", {
+        name: "b",
+        meaning: "等式右侧向量或矩阵。",
+        detail: "它的维度需要与系数矩阵的行数一致。",
+      }), getParam("dtype"), getParam("axis_numpy")]
+    case "np-linalg-norm":
+      return [getParam("a"), getParam("ord", {
+        name: "ord",
+        meaning: "范数类型。",
+        detail: "向量常见 1 范数、2 范数，无穷范数；矩阵也有对应范数定义。",
+      }), getParam("axis_numpy"), getParam("keepdims", {
+        name: "keepdims",
+        meaning: "是否保留被归约掉的维度。",
+        detail: "后续还要做广播运算时很方便。",
+      })]
+    case "np-diff-gradient":
+      return [getParam("a"), getParam("n", {
+        name: "n",
+        meaning: "差分次数。",
+        detail: "diff 中多次差分会进一步压缩长度，也会放大噪声。",
+      }), getParam("axis_numpy"), getParam("edge_order", {
+        name: "edge_order",
+        meaning: "gradient 边缘处的差分阶数。",
+        detail: "边界点估计方式会影响梯度平滑度。",
+      })]
+    case "np-searchsorted":
+    case "np-digitize":
+      return [getParam("a"), getParam("v", {
+        name: "v / x",
+        meaning: "要插入或分箱的目标值。",
+        detail: "searchsorted 用于定位插入点，digitize 用于映射到箱编号。",
+      }), getParam("side", {
+        name: "side / right",
+        meaning: "边界值落点的规则。",
+        detail: "left/right 或 right=True/False 会直接影响分箱归属。",
+      }), getParam("bins")]
+    case "np-take":
+      return [getParam("a"), getParam("indices", {
+        name: "indices",
+        meaning: "要提取的位置索引列表。",
+        detail: "可以是单个整数、列表或数组，适合动态拼装索引。",
+      }), getParam("axis_numpy"), getParam("mode", {
+        name: "mode",
+        meaning: "索引越界时如何处理。",
+        detail: "raise、wrap、clip 会直接影响越界索引的结果。",
+      })]
+    case "np-isclose-allclose":
+      return [getParam("a"), getParam("b", {
+        name: "b",
+        meaning: "要比较的另一组数组或标量。",
+        detail: "两边形状需要可广播，才能逐元素比较。",
+      }), getParam("rtol", {
+        name: "rtol",
+        meaning: "相对误差容忍度。",
+        detail: "值越小要求越严格，适合数值回归测试。",
+      }), getParam("atol", {
+        name: "atol",
+        meaning: "绝对误差容忍度。",
+        detail: "非常接近 0 的数比较时尤其重要。",
+      })]
+    case "np-cov":
+      return [getParam("m", {
+        name: "m",
+        meaning: "输入观测矩阵。",
+        detail: "需要明确观测在行还是列，避免协方差矩阵方向搞反。",
+      }), getParam("rowvar", {
+        name: "rowvar",
+        meaning: "是否把每一行视为一个变量。",
+        detail: "默认行为和很多机器学习库习惯不同，值得特别确认。",
+      }), getParam("ddof", {
+        name: "ddof",
+        meaning: "自由度修正。",
+        detail: "样本协方差和总体协方差的口径会体现在这里。",
+      }), getParam("dtype")]
+    case "sp-stats-zscore":
+      return [getParam("a"), getParam("axis_numpy"), getParam("ddof", {
+        name: "ddof",
+        meaning: "标准差计算的自由度修正。",
+        detail: "样本标准差与总体标准差的选择会影响 z-score 数值。",
+      }), getParam("nan_policy", {
+        name: "nan_policy",
+        meaning: "遇到缺失值时如何处理。",
+        detail: "常见有 propagate、omit、raise，缺失较多时尤其重要。",
+      })]
+    case "sp-stats-ttest-ind":
+      return [getParam("a"), getParam("b", {
+        name: "b",
+        meaning: "第二组样本。",
+        detail: "与第一组样本共同构成检验的比较对象。",
+      }), getParam("alternative", {
+        name: "alternative",
+        meaning: "备择假设方向。",
+        detail: "two-sided、less、greater 会直接决定 p 值的解释方式。",
+      }), getParam("equal_var", {
+        name: "equal_var",
+        meaning: "独立样本 t 检验里是否假设方差齐性。",
+        detail: "方差不齐时更适合关闭，使用 Welch 版本检验。",
+      }), getParam("nan_policy", {
+        name: "nan_policy",
+        meaning: "缺失值处理策略。",
+        detail: "统计检验前建议先明确剔除还是忽略缺失样本。",
+      })]
+    case "sp-stats-ttest-rel":
+      return [getParam("a"), getParam("b", {
+        name: "b",
+        meaning: "与第一组逐一配对的第二组样本。",
+        detail: "两组长度需要一致，并且每个位置代表同一对象的两次观测。",
+      }), getParam("alternative", {
+        name: "alternative",
+        meaning: "备择假设方向。",
+        detail: "决定 p 值是双侧还是单侧意义上的显著性。",
+      }), getParam("nan_policy", {
+        name: "nan_policy",
+        meaning: "缺失值处理策略。",
+        detail: "配对样本里如果有缺失，最好先统一处理配对关系。",
+      })]
+    case "sp-stats-f-oneway":
+      return [getParam("group_a", {
+        name: "*samples",
+        meaning: "两组或多组待比较样本。",
+        detail: "传入的每一组样本代表一个实验组或类别组。",
+      }), getParam("axis_numpy"), getParam("nan_policy", {
+        name: "nan_policy",
+        meaning: "缺失值处理策略。",
+        detail: "ANOVA 前最好先明确缺失是否会破坏组间平衡。",
+      })]
+    case "sp-stats-mannwhitneyu":
+      return [getParam("a"), getParam("b", {
+        name: "b",
+        meaning: "第二组独立样本。",
+        detail: "两组样本彼此独立，不要求满足正态分布。",
+      }), getParam("alternative", {
+        name: "alternative",
+        meaning: "备择假设方向。",
+        detail: "决定比较的是整体差异还是单侧方向上的差异。",
+      }), getParam("method", {
+        name: "method",
+        meaning: "p 值计算方式。",
+        detail: "exact 或 asymptotic 会受样本量大小和并列值影响。",
+      })]
+    case "sp-stats-wilcoxon":
+      return [getParam("a"), getParam("b", {
+        name: "b",
+        meaning: "配对样本的第二组观测。",
+        detail: "和第一组是一一对应关系，适合前后测或配对实验。",
+      }), getParam("alternative", {
+        name: "alternative",
+        meaning: "备择假设方向。",
+        detail: "决定是否做双侧或单侧的配对秩和差异判断。",
+      }), getParam("zero_method", {
+        name: "zero_method",
+        meaning: "差值恰好为 0 时的处理方式。",
+        detail: "零差值较多时会影响有效样本量和检验口径。",
+      }), getParam("method", {
+        name: "method",
+        meaning: "p 值计算方式。",
+        detail: "样本量不大时可关注 exact 方法是否适用。",
+      })]
+    case "sp-stats-chi2":
+      return [getParam("observed", {
+        name: "observed",
+        meaning: "列联表或观测频数矩阵。",
+        detail: "每个单元格都是观测计数，不能直接传原始长表。",
+      }), getParam("correction", {
+        name: "correction",
+        meaning: "是否使用连续性校正。",
+        detail: "2x2 列联表里常见，但要和口径保持一致。",
+      }), getParam("lambda_", {
+        name: "lambda_",
+        meaning: "控制使用哪种功效散度统计量。",
+        detail: "默认是 Pearson 卡方，也可以切到 G-test 等近亲方法。",
+      })]
+    case "sp-stats-pearsonr":
+    case "sp-stats-spearmanr":
+    case "sp-stats-linregress":
+      return [getParam("x"), getParam("y"), getParam("alternative", {
+        name: "alternative",
+        meaning: "备择假设方向。",
+        detail: "相关性检验和线性回归显著性判断时都需要注意方向假设。",
+      }), getParam("nan_policy", {
+        name: "nan_policy",
+        meaning: "缺失值策略。",
+        detail: "对齐后的 x/y 序列若有缺失，最好先显式处理。",
+      })]
+    case "sp-stats-shapiro":
+      return [getParam("a"), getParam("axis_numpy"), getParam("nan_policy", {
+        name: "nan_policy",
+        meaning: "缺失值处理策略。",
+        detail: "样本量不大时常用来做正态性检查，但对异常值较敏感。",
+      })]
+    case "sp-stats-gaussian-kde":
+      return [getParam("dataset", {
+        name: "dataset",
+        meaning: "用于估计密度的数据集。",
+        detail: "可以是一维样本，也可以是多维样本矩阵。",
+      }), getParam("bw_method", {
+        name: "bw_method",
+        meaning: "核密度估计的带宽方法。",
+        detail: "带宽直接影响平滑程度，是 KDE 成败最关键的参数之一。",
+      }), getParam("weights", {
+        name: "weights",
+        meaning: "每个样本的权重。",
+        detail: "加权样本场景下很有用，可以保留业务重要性差异。",
+      })]
+    case "sp-interpolate-interp1d":
+    case "sp-interpolate-spline":
+      return [getParam("x"), getParam("y"), getParam("kind", {
+        name: "kind / k",
+        meaning: "插值类型或样条阶数。",
+        detail: "linear、cubic 或样条阶数决定平滑程度和局部形状。",
+      }), getParam("fill_value", {
+        name: "fill_value",
+        meaning: "外推或缺口位置的填充值。",
+        detail: "边界外的处理方式会影响可解释性，最好显式指定。",
+      }), getParam("bounds_error", {
+        name: "bounds_error",
+        meaning: "遇到超出原始 x 范围的点时是否报错。",
+        detail: "离开训练区间后的预测往往不稳定，建议主动防守。",
+      })]
+    case "sp-signal-savgol":
+      return [getParam("x"), getParam("window_length", {
+        name: "window_length",
+        meaning: "平滑窗口长度。",
+        detail: "必须是正奇数，窗口越大平滑越强，但也更可能抹掉细节。",
+      }), getParam("polyorder", {
+        name: "polyorder",
+        meaning: "局部拟合多项式阶数。",
+        detail: "阶数太低会欠拟合，太高则可能把噪声也拟合进去。",
+      }), getParam("mode", {
+        name: "mode",
+        meaning: "边界点处理方式。",
+        detail: "边缘数据较短时尤其要关注 mode 对首尾形状的影响。",
+      })]
+    case "sp-signal-find-peaks":
+      return [getParam("x"), getParam("height", {
+        name: "height",
+        meaning: "峰值最低高度门槛。",
+        detail: "可以快速去掉小噪声峰，保留显著峰值。",
+      }), getParam("distance", {
+        name: "distance",
+        meaning: "相邻峰之间的最小间距。",
+        detail: "能避免同一大峰周围被识别出多个近邻小峰。",
+      }), getParam("prominence", {
+        name: "prominence",
+        meaning: "峰值突显度门槛。",
+        detail: "相比单纯高度，更能反映峰相对周围背景的显著性。",
+      })]
+    case "sp-signal-convolve":
+    case "sp-signal-correlate":
+      return [getParam("in1", {
+        name: "in1",
+        meaning: "第一组输入信号或数组。",
+        detail: "通常是原始序列。",
+      }), getParam("in2", {
+        name: "in2",
+        meaning: "第二组卷积核或参考模板。",
+        detail: "卷积时常代表滤波器，相关时常代表匹配模板。",
+      }), getParam("mode", {
+        name: "mode",
+        meaning: "输出长度策略。",
+        detail: "full、same、valid 会改变边界和输出长度。",
+      }), getParam("method", {
+        name: "method",
+        meaning: "底层计算策略。",
+        detail: "长序列时 FFT 版往往更快，但不是所有场景都适合。",
+      })]
+    case "sp-optimize-minimize":
+      return [getParam("fun", {
+        name: "fun",
+        meaning: "要最小化的目标函数。",
+        detail: "函数需要返回标量，最好保持连续且可重复计算。",
+      }), getParam("x0", {
+        name: "x0",
+        meaning: "初始参数猜测。",
+        detail: "很多非凸问题对初始值很敏感，最好多做几组尝试。",
+      }), getParam("args", {
+        name: "args",
+        meaning: "传给目标函数的附加参数。",
+        detail: "把数据和固定超参数通过这里带进去最常见。",
+      }), getParam("method", {
+        name: "method",
+        meaning: "优化算法。",
+        detail: "BFGS、L-BFGS-B、SLSQP 等算法各有约束和速度特征。",
+      }), getParam("bounds", {
+        name: "bounds",
+        meaning: "参数取值边界。",
+        detail: "当参数有物理或业务含义时，边界往往很重要。",
+      })]
+    case "sp-optimize-curve-fit":
+      return [getParam("f", {
+        name: "f",
+        meaning: "待拟合的函数模型。",
+        detail: "第一个参数通常是 x，其余参数是要估计的模型参数。",
+      }), getParam("xdata", {
+        name: "xdata",
+        meaning: "自变量观测值。",
+        detail: "建议先保证排序与尺度合理，避免拟合不稳定。",
+      }), getParam("ydata", {
+        name: "ydata",
+        meaning: "因变量观测值。",
+        detail: "最好先做异常点检查，拟合对极端值很敏感。",
+      }), getParam("p0", {
+        name: "p0",
+        meaning: "初始参数猜测。",
+        detail: "初始值接近真实解时，收敛通常更稳定。",
+      }), getParam("bounds", {
+        name: "bounds",
+        meaning: "参数上下界。",
+        detail: "在物理建模或率值约束里非常常见。",
+      })]
+    case "sp-optimize-root":
+      return [getParam("fun", {
+        name: "fun",
+        meaning: "要求其等于 0 的方程或方程组。",
+        detail: "返回值形状应与待求解变量的形状匹配。",
+      }), getParam("x0", {
+        name: "x0",
+        meaning: "求根初始猜测。",
+        detail: "初始值会影响收敛到哪个根，甚至是否收敛。",
+      }), getParam("args", {
+        name: "args",
+        meaning: "附加参数。",
+        detail: "把固定常数或观测数据带入方程时很常用。",
+      }), getParam("method", {
+        name: "method",
+        meaning: "求根算法。",
+        detail: "hybr、lm、broyden 等算法适合的方程性质并不相同。",
+      })]
+    case "sp-optimize-linprog":
+      return [getParam("c", {
+        name: "c",
+        meaning: "线性目标函数系数。",
+        detail: "默认是最小化问题，最大化常通过取负来转化。",
+      }), getParam("A_ub", {
+        name: "A_ub",
+        meaning: "不等式约束左侧系数矩阵。",
+        detail: "通常与 b_ub 共同描述 A_ub @ x <= b_ub。",
+      }), getParam("b_ub", {
+        name: "b_ub",
+        meaning: "不等式约束右侧向量。",
+        detail: "量纲和约束方向要与 A_ub 保持一致。",
+      }), getParam("bounds", {
+        name: "bounds",
+        meaning: "每个决策变量的上下界。",
+        detail: "变量非负、容量上限等业务限制通常写在这里。",
+      }), getParam("method", {
+        name: "method",
+        meaning: "线性规划求解器。",
+        detail: "highs 系列是现代默认首选，速度和稳定性都较好。",
+      })]
+    case "sp-spatial-cdist":
+    case "sp-spatial-pdist-squareform":
+      return [getParam("XA", {
+        name: "XA / X",
+        meaning: "第一组样本点矩阵。",
+        detail: "每一行通常代表一个样本，每一列代表一个特征。",
+      }), getParam("XB", {
+        name: "XB",
+        meaning: "第二组样本点矩阵。",
+        detail: "只有 cdist 需要第二组样本；pdist 只在同一组内部计算。",
+      }), getParam("metric", {
+        name: "metric",
+        meaning: "距离度量方式。",
+        detail: "euclidean、cosine、cityblock 等度量会直接决定相似性的定义。",
+      })]
+    case "sp-sparse-csr":
+      return [getParam("data", {
+        meaning: "非零元素数据，或能被转成稀疏矩阵的输入。",
+        detail: "稀疏矩阵只显式保存非零值，适合大规模稀疏特征。",
+      }), getParam("shape"), getParam("dtype"), getParam("copy", {
+        name: "copy",
+        meaning: "是否复制输入数据。",
+        detail: "大规模稀疏特征矩阵场景里值得关注内存成本。",
+      })]
+    case "sp-special-expit":
+      return [getParam("x"), getParam("dtype"), getParam("out", {
+        name: "out",
+        meaning: "可选的输出缓冲区。",
+        detail: "性能敏感或想避免额外分配内存时可使用。",
+      })]
     case "sns-set-theme":
     case "sns-despine":
+    case "sns-color-palette":
       return [
         getParam("style"),
         getParam("palette", {
@@ -1130,6 +1558,8 @@ function buildParameterDocs(command) {
       })]
     case "sns-pairplot":
     case "sns-facetgrid":
+    case "sns-pairgrid":
+    case "sns-jointgrid":
       return [getParam("data"), getParam("hue"), getParam("vars", {
         name: "vars / col / row",
         meaning: "成对绘制的变量或分面维度。",
@@ -1142,7 +1572,24 @@ function buildParameterDocs(command) {
     case "sns-relplot":
     case "sns-catplot":
     case "sns-lmplot":
+    case "sns-pointplot":
+    case "sns-boxenplot":
+    case "sns-residplot":
+    case "sns-rugplot":
       return [getParam("data"), getParam("x"), getParam("y"), getParam("hue"), getParam("kind")]
+    case "sns-move-legend":
+      return [getParam("obj", {
+        name: "obj",
+        meaning: "包含图例的 axes 或 figure 级对象。",
+        detail: "通常传入当前图的 Axes 或 FacetGrid。",
+      }), getParam("loc", {
+        meaning: "图例的新位置。",
+        detail: "可以是 right upper、upper left 等常见图例位置字符串。",
+      }), getParam("title", {
+        name: "title",
+        meaning: "图例标题。",
+        detail: "重新摆放图例时，通常也会顺手统一标题文案。",
+      })]
     case "plt-subplots":
     case "plt-subplot-mosaic":
       return [getParam("nrows", {
@@ -1180,7 +1627,77 @@ function buildParameterDocs(command) {
     case "plt-step":
     case "plt-stem":
     case "plt-contourf":
+    case "plt-violinplot":
+    case "plt-eventplot":
+    case "plt-axline":
+    case "plt-hexbin":
       return [getParam("x"), getParam("y"), getParam("color"), getParam("label"), getParam("alpha")]
+    case "plt-quiver":
+    case "plt-streamplot":
+      return [getParam("x"), getParam("y"), getParam("u", {
+        name: "u",
+        meaning: "向量场在 x 方向的分量。",
+        detail: "应与 v 和坐标网格形状匹配。",
+      }), getParam("v", {
+        name: "v",
+        meaning: "向量场在 y 方向的分量。",
+        detail: "和 u 一起决定箭头方向与大小。",
+      }), getParam("color")]
+    case "plt-matshow":
+      return [getParam("a", {
+        meaning: "要显示的二维矩阵。",
+        detail: "行列结构会直接映射到图像网格。",
+      }), getParam("cmap"), getParam("aspect", {
+        name: "aspect",
+        meaning: "单元格宽高比。",
+        detail: "auto 或 equal 会影响矩阵单元格形状。",
+      }), getParam("fignum", {
+        name: "fignum",
+        meaning: "目标图编号。",
+        detail: "需要把结果放到已有图对象时可使用。",
+      })]
+    case "plt-table":
+      return [getParam("cellText", {
+        name: "cellText",
+        meaning: "表格单元格文字内容。",
+        detail: "通常是二维列表，行列结构要与标签匹配。",
+      }), getParam("colLabels", {
+        name: "colLabels",
+        meaning: "列表头。",
+        detail: "适合把摘要指标直接放到图里说明。",
+      }), getParam("rowLabels", {
+        name: "rowLabels",
+        meaning: "行标签。",
+        detail: "数据量稍大时要控制字号，避免挤压主图。",
+      }), getParam("loc")]
+    case "plt-suptitle":
+      return [getParam("text", {
+        name: "text",
+        meaning: "整张图的总标题文字。",
+        detail: "适合多子图看板或一页多图的总主题说明。",
+      }), getParam("fontsize", {
+        name: "fontsize",
+        meaning: "标题字号。",
+        detail: "总标题通常略大于单个子图标题。",
+      }), getParam("y", {
+        meaning: "标题的垂直位置。",
+        detail: "tight_layout 或 constrained_layout 后常需要微调。",
+      })]
+    case "plt-tight-layout":
+    case "plt-subplots-adjust":
+      return [getParam("pad", {
+        name: "pad / wspace / hspace",
+        meaning: "子图边距或间距控制参数。",
+        detail: "标题、图例、长刻度标签很容易让布局变挤，这些参数很关键。",
+      }), getParam("rect", {
+        name: "rect",
+        meaning: "tight_layout 可用的画布区域。",
+        detail: "为 suptitle 或侧边图例预留空间时很常见。",
+      }), getParam("left", {
+        name: "left / right / top / bottom",
+        meaning: "子图边界位置。",
+        detail: "subplots_adjust 中可以精确控制四周留白。",
+      })]
     case "plt-axhline-axvline":
     case "plt-axspan":
     case "plt-xlim-ylim":
@@ -1233,6 +1750,232 @@ function normalizeSyntaxExpression(command) {
   return syntax
 }
 
+function getScipyWorkflowLines(command, mode = "workflow") {
+  switch (command.id) {
+    case "sp-stats-zscore":
+      return [
+        "import numpy as np",
+        "from scipy import stats",
+        "",
+        "values = np.array([12, 14, 15, 16, 20, 25])",
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(result)" : 'print("mean:", np.round(result.mean(), 6))',
+      ]
+    case "sp-stats-ttest-ind":
+    case "sp-stats-f-oneway":
+    case "sp-stats-mannwhitneyu":
+      return [
+        "import numpy as np",
+        "from scipy import stats",
+        "",
+        "group_a = np.array([102, 98, 105, 110, 108])",
+        "group_b = np.array([95, 97, 99, 100, 96])",
+        ...(command.id === "sp-stats-f-oneway"
+          ? ["group_c = np.array([112, 115, 111, 118, 116])"]
+          : []),
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow"
+          ? "print(result)"
+          : 'print({"stat": result.statistic, "pvalue": result.pvalue})',
+      ]
+    case "sp-stats-ttest-rel":
+    case "sp-stats-wilcoxon":
+      return [
+        "import numpy as np",
+        "from scipy import stats",
+        "",
+        "before = np.array([78, 81, 75, 80, 77], dtype=float)",
+        "after = np.array([82, 83, 79, 84, 80], dtype=float)",
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow"
+          ? "print(result)"
+          : 'print({"stat": result.statistic, "pvalue": result.pvalue})',
+      ]
+    case "sp-stats-chi2":
+      return [
+        "import numpy as np",
+        "from scipy import stats",
+        "",
+        "table = np.array([[42, 18], [28, 31]])",
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow"
+          ? "print(result)"
+          : 'print({"chi2": result[0], "pvalue": result[1]})',
+      ]
+    case "sp-stats-pearsonr":
+    case "sp-stats-spearmanr":
+    case "sp-stats-linregress":
+      return [
+        "import numpy as np",
+        "from scipy import stats",
+        "",
+        "x = np.array([1, 2, 3, 4, 5, 6])",
+        "y = np.array([12, 14, 17, 18, 21, 24])",
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(result)" : 'print("pvalue:", result.pvalue)',
+      ]
+    case "sp-stats-shapiro":
+      return [
+        "import numpy as np",
+        "from scipy import stats",
+        "",
+        "values = np.array([8.1, 8.4, 8.8, 9.2, 9.3, 9.6, 10.1])",
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(result)" : 'print("normal_like:", result.pvalue > 0.05)',
+      ]
+    case "sp-stats-gaussian-kde":
+      return [
+        "import numpy as np",
+        "from scipy import stats",
+        "",
+        "values = np.array([12, 14, 15, 16, 18, 20, 21])",
+        `kde = ${normalizeSyntaxExpression(command)}`,
+        "grid = np.linspace(values.min(), values.max(), 6)",
+        mode === "workflow" ? "print(kde(grid))" : 'print("grid points:", grid)',
+      ]
+    case "sp-interpolate-interp1d":
+    case "sp-interpolate-spline":
+      return [
+        "import numpy as np",
+        "from scipy import interpolate",
+        "",
+        "x = np.array([0, 1, 2, 4, 6])",
+        "y = np.array([0, 2, 3, 3.5, 5])",
+        command.id === "sp-interpolate-interp1d"
+          ? `interp = ${normalizeSyntaxExpression(command)}`
+          : `spline = ${normalizeSyntaxExpression(command)}`,
+        "grid = np.linspace(0, 6, 9)",
+        command.id === "sp-interpolate-interp1d"
+          ? mode === "workflow"
+            ? "print(interp(grid))"
+            : 'print("grid:", grid)'
+          : mode === "workflow"
+            ? "print(spline(grid))"
+            : 'print("grid:", grid)',
+      ]
+    case "sp-signal-savgol":
+      return [
+        "import numpy as np",
+        "from scipy import signal",
+        "",
+        "series = np.array([2.0, 2.2, 2.5, 2.9, 3.8, 3.2, 3.1, 3.3, 3.5])",
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(result.round(3))" : 'print("smoothed points:", len(result))',
+      ]
+    case "sp-signal-find-peaks":
+      return [
+        "import numpy as np",
+        "from scipy import signal",
+        "",
+        "series = np.array([1, 3, 2, 5, 1, 4, 1, 6, 1])",
+        `peaks, props = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(peaks)" : 'print("count:", len(peaks))',
+      ]
+    case "sp-signal-convolve":
+    case "sp-signal-correlate":
+      return [
+        "import numpy as np",
+        "from scipy import signal",
+        "",
+        "signal_a = np.array([0, 1, 2, 1, 0])",
+        "signal_b = np.array([1, 0, -1])",
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(result)" : 'print("length:", len(result))',
+      ]
+    case "sp-optimize-minimize":
+      return [
+        "import numpy as np",
+        "from scipy import optimize",
+        "",
+        "def objective(x):",
+        "    return (x[0] - 2) ** 2 + (x[1] + 1) ** 2",
+        "",
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(result.x)" : 'print({"success": result.success, "fun": result.fun})',
+      ]
+    case "sp-optimize-curve-fit":
+      return [
+        "import numpy as np",
+        "from scipy import optimize",
+        "",
+        "def model(x, a, b):",
+        "    return a * np.exp(b * x)",
+        "",
+        "xdata = np.array([0, 1, 2, 3, 4], dtype=float)",
+        "ydata = np.array([2.0, 2.8, 4.1, 5.8, 8.2])",
+        `params, cov = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(params)" : 'print("diag cov:", np.diag(cov))',
+      ]
+    case "sp-optimize-root":
+      return [
+        "from scipy import optimize",
+        "",
+        "def equation(x):",
+        "    return x ** 3 - 2 * x - 5",
+        "",
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(result.x)" : 'print("success:", result.success)',
+      ]
+    case "sp-optimize-linprog":
+      return [
+        "from scipy import optimize",
+        "",
+        "c = [-5, -4]",
+        "A_ub = [[6, 4], [1, 2], [-1, 1]]",
+        "b_ub = [24, 6, 1]",
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(result.x)" : 'print("optimal:", result.fun)',
+      ]
+    case "sp-spatial-cdist":
+      return [
+        "import numpy as np",
+        "from scipy.spatial import distance",
+        "",
+        "XA = np.array([[0, 0], [1, 1], [2, 2]])",
+        "XB = np.array([[0, 1], [2, 1]])",
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(result)" : 'print("shape:", result.shape)',
+      ]
+    case "sp-spatial-pdist-squareform":
+      return [
+        "import numpy as np",
+        "from scipy.spatial import distance",
+        "",
+        "points = np.array([[0, 0], [1, 1], [2, 1], [2, 3]])",
+        "dist_vec = distance.pdist(points, metric=\"euclidean\")",
+        "result = distance.squareform(dist_vec)",
+        mode === "workflow" ? "print(result)" : 'print("shape:", result.shape)',
+      ]
+    case "sp-sparse-csr":
+      return [
+        "import numpy as np",
+        "from scipy import sparse",
+        "",
+        "dense = np.array([[0, 1, 0], [2, 0, 0], [0, 0, 3]])",
+        `matrix = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(matrix.toarray())" : 'print("nnz:", matrix.nnz)',
+      ]
+    case "sp-special-expit":
+      return [
+        "import numpy as np",
+        "from scipy import special",
+        "",
+        "logits = np.array([-3.0, -1.0, 0.0, 1.0, 3.0])",
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(result.round(4))" : 'print("min/max:", result.min(), result.max())',
+      ]
+    default:
+      return [
+        "import numpy as np",
+        "from scipy import stats",
+        "",
+        "values = np.array([1, 2, 3, 4, 5])",
+        `result = ${normalizeSyntaxExpression(command)}`,
+        mode === "workflow" ? "print(result)" : 'print("done")',
+      ]
+  }
+}
+
 function buildWorkflowExample(command) {
   const syntax = normalizeSyntaxExpression(command)
 
@@ -1263,6 +2006,14 @@ function buildWorkflowExample(command) {
         "print(result)",
       ]),
       "先在小数组上验证维度和数值变化，再扩展到正式数据。"
+    )
+  }
+
+  if (command.library === "scipy") {
+    return createExample(
+      "科研计算示例",
+      lines(getScipyWorkflowLines(command, "workflow")),
+      "先用小规模向量验证统计量、参数或返回对象的结构，再放到正式样本上。"
     )
   }
 
@@ -1335,6 +2086,14 @@ function buildValidationExample(command) {
         "print(checked)",
       ]),
       "在二维数组上额外验证一次，通常更容易发现 axis 和广播问题。"
+    )
+  }
+
+  if (command.library === "scipy") {
+    return createExample(
+      "结果解释校验示例",
+      lines(getScipyWorkflowLines(command, "validation")),
+      "scipy 很多函数返回命名结果对象或多元组，正式使用前最好先看清返回结构。"
     )
   }
 
@@ -1721,6 +2480,126 @@ function buildExamples(command) {
   ]
 }
 
+function buildVisualDemoSpec(command) {
+  if (!["seaborn", "matplotlib"].includes(command.library)) {
+    return null
+  }
+
+  const id = command.id
+
+  const definitions = [
+    {
+      test: /heatmap|clustermap|imshow|matshow|contourf/.test(id),
+      type: "heatmap",
+      title: "矩阵型图示意",
+      note: "适合热力图、矩阵图和二维数值面的视觉记忆。",
+    },
+    {
+      test: /color-palette|colorbar/.test(id),
+      type: "palette",
+      title: "配色与色标示意",
+      note: "适合记住调色板和色标命令在可视化中的角色。",
+    },
+    {
+      test: /pairplot|pairgrid|jointplot|jointgrid|facetgrid|relplot|catplot|subplot|mosaic/.test(id),
+      type: "grid",
+      title: "多面板布局示意",
+      note: "帮助快速记住分面、多子图和矩阵式可视化的结构。",
+    },
+    {
+      test: /boxplot|boxenplot|violinplot/.test(id),
+      type: "box",
+      title: "分布摘要图示意",
+      note: "适合箱线图、小提琴图这类强调分布形状与离散程度的图。",
+    },
+    {
+      test: /histplot|hist|displot|kdeplot|ecdfplot|rugplot/.test(id),
+      type: "distribution",
+      title: "分布曲线示意",
+      note: "用于记住分箱、密度、累计分布和地毯线的典型轮廓。",
+    },
+    {
+      test: /barh|countplot/.test(id),
+      type: "barh",
+      title: "横向比较图示意",
+      note: "适合类别多、标签长的排序型比较图。",
+    },
+    {
+      test: /bar|pointplot/.test(id),
+      type: "bar",
+      title: "类别比较图示意",
+      note: "适合柱状图、点估计图这类按组比较的结构。",
+    },
+    {
+      test: /scatter|stripplot|swarmplot|hexbin/.test(id),
+      type: "scatter",
+      title: "散点关系图示意",
+      note: "强调点位分布、拥挤程度和两变量关系。",
+    },
+    {
+      test: /regplot|lmplot|residplot/.test(id),
+      type: "regression",
+      title: "关系与趋势示意",
+      note: "用于记住散点与趋势线、残差结构的典型组合。",
+    },
+    {
+      test: /fill-between|stackplot/.test(id),
+      type: "area",
+      title: "面积层叠图示意",
+      note: "适合区间带、累计结构和面积型趋势表达。",
+    },
+    {
+      test: /quiver|streamplot/.test(id),
+      type: "vector",
+      title: "向量场示意",
+      note: "适合流场、方向场或梯度方向这类箭头图。",
+    },
+    {
+      test: /pie/.test(id),
+      type: "pie",
+      title: "占比图示意",
+      note: "用来记住扇区占比结构，更适合少类别场景。",
+    },
+    {
+      test: /step|stem|eventplot/.test(id),
+      type: "step",
+      title: "离散过程图示意",
+      note: "适合阶梯、离散脉冲和事件序列的视觉结构。",
+    },
+    {
+      test: /table/.test(id),
+      type: "table",
+      title: "图内表格示意",
+      note: "适合把摘要指标和说明信息嵌进图表版面。",
+    },
+    {
+      test: /twinx|secondary-axis|move-legend|despine|style-use|savefig|tight-layout|subplots-adjust|suptitle|annotate|text|axhline|axvline|axspan/.test(id),
+      type: "layout",
+      title: "版式与标注示意",
+      note: "这类命令更偏图表修饰和版式控制，因此用结构示意来帮助记忆。",
+    },
+    {
+      test: /lineplot|plot/.test(id),
+      type: "line",
+      title: "趋势图示意",
+      note: "适合折线、趋势线和时间序列类图表的结构记忆。",
+    },
+  ]
+
+  const matched = definitions.find((item) => item.test)
+  return matched
+    ? {
+        type: matched.type,
+        title: matched.title,
+        note: matched.note,
+      }
+    : {
+        type: "line",
+        title: "通用图形示意",
+        note: "这张预览是帮助记忆图形结构的离线示意图。",
+      }
+}
+
 function normalizeParamDoc(param) {
   return {
     name: param.name || "参数",
@@ -1767,5 +2646,9 @@ function buildCommandRecord(command) {
         : buildExamples(normalized).map((example, index) =>
             normalizeExampleCard(example, `示例 ${index + 1}`)
           ),
+    visualDemo:
+      Object.prototype.hasOwnProperty.call(normalized, "visualDemo")
+        ? normalized.visualDemo
+        : buildVisualDemoSpec(normalized),
   }
 }

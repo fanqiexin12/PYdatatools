@@ -2,6 +2,7 @@ const libraryMeta = {
   all: { label: "全部库", note: "一起检索" },
   pandas: { label: "pandas", note: "表格处理" },
   numpy: { label: "numpy", note: "数值计算" },
+  scipy: { label: "scipy", note: "科学计算" },
   seaborn: { label: "seaborn", note: "统计绘图" },
   matplotlib: { label: "matplotlib", note: "基础绘图" },
 }
@@ -18,6 +19,9 @@ const categoryMeta = {
   reshape: { label: "形状调整" },
   time: { label: "时间序列" },
   numeric: { label: "数值计算" },
+  stats: { label: "统计推断" },
+  optimize: { label: "优化求解" },
+  signal: { label: "信号处理" },
   plot: { label: "绘图展示" },
 }
 
@@ -29,6 +33,9 @@ const quickFilters = [
   { label: "时间序列", library: "pandas", category: "time", search: "" },
   { label: "字符串处理", library: "pandas", category: "transform", search: "str" },
   { label: "数组条件", library: "numpy", category: "numeric", search: "where" },
+  { label: "统计检验", library: "scipy", category: "stats", search: "" },
+  { label: "优化求解", library: "scipy", category: "optimize", search: "" },
+  { label: "信号平滑", library: "scipy", category: "signal", search: "filter" },
   { label: "统计图", library: "seaborn", category: "plot", search: "" },
   { label: "基础绘图", library: "matplotlib", category: "plot", search: "" },
 ]
@@ -164,6 +171,28 @@ const scenarios = [
       "seaborn 很多图更喜欢长表结构。",
       "热力图适合矩阵类结果，pairplot 适合探索变量关系。",
       "最后用 savefig 留存结果，避免只停留在屏幕展示。",
+    ],
+  },
+  {
+    id: "scenario-scipy",
+    title: "统计检验、平滑与模型拟合",
+    summary: "从标准化、显著性检验，到插值平滑、曲线拟合和分布展示的一条常见科研/分析链路。",
+    library: "all",
+    category: "all",
+    search: "scipy",
+    leadId: "sp-stats-zscore",
+    steps: [
+      "sp-stats-zscore",
+      "sp-stats-ttest-ind",
+      "sp-stats-linregress",
+      "sp-interpolate-interp1d",
+      "sp-signal-savgol",
+      "sns-pointplot",
+    ],
+    highlights: [
+      "先做标准化和分布检查，再进入显著性检验与拟合。",
+      "平滑和插值适合连续序列，但不要掩盖真实异常点。",
+      "把 scipy 的结果接到 seaborn 或 matplotlib 图上，最适合做讲解型分析。",
     ],
   },
 ]
@@ -2846,5 +2875,1036 @@ ax.secondary_yaxis(
 fig.tight_layout()`,
     keywords: ["secondary axis", "第二坐标轴", "单位换算", "temperature"],
     related: ["plt-twinx", "plt-xlim-ylim", "plt-subplots"],
+  }),
+  createCommand({
+    id: "np-meshgrid",
+    library: "numpy",
+    category: "reshape",
+    title: "np.meshgrid()",
+    alias: "生成二维网格坐标",
+    summary: "适合构造曲面图、等高线图、热力图或二维函数评估的坐标网格。",
+    syntax: 'X, Y = np.meshgrid(x, y, indexing="xy")',
+    code: `import numpy as np
+
+x = np.linspace(-2, 2, 5)
+y = np.linspace(-1, 1, 4)
+X, Y = np.meshgrid(x, y, indexing="xy")
+
+print(X.shape, Y.shape)`,
+    keywords: ["meshgrid", "网格坐标", "二维函数", "contour"],
+    related: ["np-reshape", "plt-contourf", "plt-quiver"],
+  }),
+  createCommand({
+    id: "np-einsum",
+    library: "numpy",
+    category: "numeric",
+    title: "np.einsum()",
+    alias: "用爱因斯坦求和表达复杂运算",
+    summary: "适合表达矩阵乘法、加权求和、批量内积等多维运算，写法紧凑但需要看清维度。",
+    syntax: 'np.einsum("ij,jk->ik", A, B)',
+    code: `import numpy as np
+
+A = np.array([[1, 2], [3, 4]])
+B = np.array([[5, 6], [7, 8]])
+
+result = np.einsum("ij,jk->ik", A, B)
+print(result)`,
+    keywords: ["einsum", "张量运算", "矩阵乘法", "高维求和"],
+    related: ["np-dot", "np-linalg-solve", "np-transpose"],
+  }),
+  createCommand({
+    id: "np-linalg-solve",
+    library: "numpy",
+    category: "numeric",
+    title: "np.linalg.solve()",
+    alias: "求解线性方程组",
+    summary: "适合解 Ax=b 这类线性方程组，比手写矩阵逆更稳定。",
+    syntax: "np.linalg.solve(A, b)",
+    code: `import numpy as np
+
+A = np.array([[3, 1], [1, 2]], dtype=float)
+b = np.array([9, 8], dtype=float)
+
+solution = np.linalg.solve(A, b)
+print(solution)`,
+    keywords: ["linalg solve", "线性方程组", "Ax=b", "矩阵求解"],
+    related: ["np-dot", "np-linalg-norm", "sp-optimize-root"],
+  }),
+  createCommand({
+    id: "np-linalg-norm",
+    library: "numpy",
+    category: "numeric",
+    title: "np.linalg.norm()",
+    alias: "计算向量或矩阵范数",
+    summary: "适合衡量向量长度、误差规模或矩阵强度，是优化和数值分析中的常见基础量。",
+    syntax: "np.linalg.norm(arr, ord=2)",
+    code: `import numpy as np
+
+arr = np.array([3, 4, 12], dtype=float)
+print(np.linalg.norm(arr, ord=2))
+print(np.linalg.norm(arr, ord=1))`,
+    keywords: ["norm", "范数", "向量长度", "误差大小"],
+    related: ["np-linalg-solve", "np-mean-axis", "sp-optimize-minimize"],
+  }),
+  createCommand({
+    id: "np-diff-gradient",
+    library: "numpy",
+    category: "numeric",
+    title: "np.diff() / np.gradient()",
+    alias: "做差分或近似梯度",
+    summary: "适合观察变化量、斜率趋势和序列局部变化速度。",
+    syntax: "np.gradient(values)",
+    code: `import numpy as np
+
+values = np.array([10, 13, 15, 18, 24], dtype=float)
+
+print(np.diff(values))
+print(np.gradient(values))`,
+    keywords: ["diff", "gradient", "差分", "变化率"],
+    related: ["np-sum-cumsum", "pd-pct-change-diff", "sp-signal-savgol"],
+  }),
+  createCommand({
+    id: "np-searchsorted",
+    library: "numpy",
+    category: "numeric",
+    title: "np.searchsorted()",
+    alias: "在有序数组中找插入位置",
+    summary: "适合做阈值定位、分段映射或查找一个值应该落在排序数组的哪里。",
+    syntax: 'np.searchsorted(sorted_values, 5.5, side="left")',
+    code: `import numpy as np
+
+sorted_values = np.array([1, 3, 5, 7, 9])
+index = np.searchsorted(sorted_values, 5.5, side="left")
+
+print(index)`,
+    keywords: ["searchsorted", "插入位置", "有序数组", "定位区间"],
+    related: ["np-sort", "np-digitize", "pd-cut-qcut"],
+  }),
+  createCommand({
+    id: "np-digitize",
+    library: "numpy",
+    category: "numeric",
+    title: "np.digitize()",
+    alias: "按箱边界把值映射到区间编号",
+    summary: "适合快速把连续数值映射成评分档位或风险区间编号。",
+    syntax: "np.digitize(values, bins=[0, 60, 80, 100])",
+    code: `import numpy as np
+
+values = np.array([35, 67, 82, 95])
+labels = np.digitize(values, bins=[0, 60, 80, 100])
+
+print(labels)`,
+    keywords: ["digitize", "分箱编号", "区间映射", "风险分段"],
+    related: ["np-searchsorted", "pd-cut-qcut", "np-where"],
+  }),
+  createCommand({
+    id: "np-isclose-allclose",
+    library: "numpy",
+    category: "numeric",
+    title: "np.isclose() / np.allclose()",
+    alias: "比较浮点数是否足够接近",
+    summary: "适合做数值回归测试、结果核对和浮点误差容忍比较。",
+    syntax: "np.allclose(a, b, rtol=1e-5, atol=1e-8)",
+    code: `import numpy as np
+
+a = np.array([0.1 + 0.2, 0.3])
+b = np.array([0.3, 0.3])
+
+print(np.isclose(a, b))
+print(np.allclose(a, b))`,
+    keywords: ["isclose", "allclose", "浮点比较", "容忍误差"],
+    related: ["np-maximum-minimum", "np-clip", "sp-special-expit"],
+  }),
+  createCommand({
+    id: "np-cov",
+    library: "numpy",
+    category: "numeric",
+    title: "np.cov()",
+    alias: "计算协方差矩阵",
+    summary: "适合快速查看多个变量之间的联合波动关系，为 PCA 或风险分析做准备。",
+    syntax: "np.cov(matrix, rowvar=False)",
+    code: `import numpy as np
+
+matrix = np.array([
+    [120, 20],
+    [130, 25],
+    [128, 23],
+    [140, 27],
+], dtype=float)
+
+cov = np.cov(matrix, rowvar=False)
+print(cov)`,
+    keywords: ["cov", "协方差矩阵", "联合波动", "risk"],
+    related: ["np-corrcoef", "np-mean-axis", "sp-stats-pearsonr"],
+  }),
+  createCommand({
+    id: "np-take",
+    library: "numpy",
+    category: "reshape",
+    title: "np.take()",
+    alias: "按索引位置批量提取元素",
+    summary: "适合沿指定轴快速抓取若干位置的数据，比手写切片更适合动态索引。",
+    syntax: "np.take(arr, [0, 2, 4], axis=0)",
+    code: `import numpy as np
+
+arr = np.array([[10, 11], [20, 21], [30, 31], [40, 41], [50, 51]])
+picked = np.take(arr, [0, 2, 4], axis=0)
+
+print(picked)`,
+    keywords: ["take", "按索引取值", "动态切片", "axis"],
+    related: ["np-reshape", "np-transpose", "pd-iloc"],
+  }),
+  createCommand({
+    id: "sns-pointplot",
+    library: "seaborn",
+    category: "plot",
+    title: "sns.pointplot()",
+    alias: "点估计图",
+    summary: "适合比较不同类别上的均值或其它聚合统计，同时显示误差范围。",
+    syntax: 'sns.pointplot(data=df, x="month", y="sales", hue="channel")',
+    code: `import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.pointplot(data=df, x="month", y="sales", hue="channel")
+plt.tight_layout()
+plt.show()`,
+    keywords: ["pointplot", "点估计图", "误差线", "类别均值"],
+    related: ["sns-lineplot", "sns-barplot", "plt-errorbar"],
+  }),
+  createCommand({
+    id: "sns-boxenplot",
+    library: "seaborn",
+    category: "plot",
+    title: "sns.boxenplot()",
+    alias: "增强型箱线图",
+    summary: "在样本量较大时比普通箱线图更能展示尾部和分位结构。",
+    syntax: 'sns.boxenplot(data=df, x="channel", y="sales")',
+    code: `import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.boxenplot(data=df, x="channel", y="sales")
+plt.tight_layout()
+plt.show()`,
+    keywords: ["boxenplot", "增强箱线图", "大样本分布", "分位结构"],
+    related: ["sns-boxplot", "sns-violinplot", "plt-violinplot"],
+  }),
+  createCommand({
+    id: "sns-residplot",
+    library: "seaborn",
+    category: "plot",
+    title: "sns.residplot()",
+    alias: "残差图",
+    summary: "适合检查线性关系拟合后残差是否存在结构、异方差或异常模式。",
+    syntax: 'sns.residplot(data=df, x="ad_cost", y="sales")',
+    code: `import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.residplot(data=df, x="ad_cost", y="sales", lowess=True)
+plt.tight_layout()
+plt.show()`,
+    keywords: ["residplot", "残差图", "拟合诊断", "heteroscedasticity"],
+    related: ["sns-regplot", "sns-lmplot", "sp-stats-linregress"],
+  }),
+  createCommand({
+    id: "sns-rugplot",
+    library: "seaborn",
+    category: "plot",
+    title: "sns.rugplot()",
+    alias: "地毯线图",
+    summary: "适合在分布图边缘补充原始样本落点，帮助判断密度图是否掩盖了离散结构。",
+    syntax: 'sns.rugplot(data=df, x="sales")',
+    code: `import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.histplot(data=df, x="sales", bins=20, stat="density")
+sns.rugplot(data=df, x="sales", height=0.06)
+plt.tight_layout()
+plt.show()`,
+    keywords: ["rugplot", "地毯线", "原始落点", "distribution"],
+    related: ["sns-histplot", "sns-kdeplot", "sns-ecdfplot"],
+  }),
+  createCommand({
+    id: "sns-pairgrid",
+    library: "seaborn",
+    category: "plot",
+    title: "sns.PairGrid()",
+    alias: "自定义成对变量网格",
+    summary: "适合比 pairplot 更灵活地指定对角线、上三角和下三角使用不同图形。",
+    syntax: 'sns.PairGrid(df, vars=["sales", "profit"], hue="channel")',
+    code: `import seaborn as sns
+
+grid = sns.PairGrid(df, vars=["sales", "profit", "cost"], hue="channel")
+grid.map_upper(sns.scatterplot)
+grid.map_lower(sns.kdeplot, fill=True)
+grid.map_diag(sns.histplot)
+grid.add_legend()`,
+    keywords: ["pairgrid", "成对变量网格", "pairplot advanced", "upper lower"],
+    related: ["sns-pairplot", "sns-jointgrid", "plt-subplots"],
+  }),
+  createCommand({
+    id: "sns-jointgrid",
+    library: "seaborn",
+    category: "plot",
+    title: "sns.JointGrid()",
+    alias: "自定义联合分布主图和边缘图",
+    summary: "适合把散点关系和边缘分布拆开分别控制，比 jointplot 更灵活。",
+    syntax: 'sns.JointGrid(data=df, x="ad_cost", y="sales")',
+    code: `import seaborn as sns
+
+grid = sns.JointGrid(data=df, x="ad_cost", y="sales", height=5)
+grid.plot_joint(sns.scatterplot)
+grid.plot_marginals(sns.histplot, kde=True)`,
+    keywords: ["jointgrid", "联合分布", "边缘分布", "jointplot advanced"],
+    related: ["sns-jointplot", "sns-pairgrid", "sns-scatterplot"],
+  }),
+  createCommand({
+    id: "sns-color-palette",
+    library: "seaborn",
+    category: "plot",
+    title: "sns.color_palette()",
+    alias: "生成或查看调色板",
+    summary: "适合为整套图表选色，保持报告中的配色统一和可区分性。",
+    syntax: 'sns.color_palette("crest", 5)',
+    code: `import seaborn as sns
+import matplotlib.pyplot as plt
+
+palette = sns.color_palette("crest", 5)
+sns.palplot(palette)
+plt.show()`,
+    keywords: ["color_palette", "调色板", "配色", "palplot"],
+    related: ["sns-set-theme", "sns-move-legend", "plt-style-use"],
+  }),
+  createCommand({
+    id: "sns-move-legend",
+    library: "seaborn",
+    category: "plot",
+    title: "sns.move_legend()",
+    alias: "移动图例位置",
+    summary: "适合把图例挪到空白区、外部边缘或更利于阅读的位置。",
+    syntax: 'sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))',
+    code: `import seaborn as sns
+import matplotlib.pyplot as plt
+
+ax = sns.scatterplot(data=df, x="sales", y="profit", hue="channel")
+sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
+plt.tight_layout()
+plt.show()`,
+    keywords: ["move_legend", "移动图例", "bbox_to_anchor", "legend"],
+    related: ["sns-color-palette", "plt-grid-legend", "plt-tight-layout"],
+  }),
+  createCommand({
+    id: "plt-violinplot",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.violinplot()",
+    alias: "小提琴图",
+    summary: "适合展示多组数据的分布形状和密度轮廓。",
+    syntax: "plt.violinplot([g1, g2, g3])",
+    code: `import matplotlib.pyplot as plt
+
+g1 = [12, 14, 13, 17, 18]
+g2 = [8, 9, 11, 14, 15]
+g3 = [18, 19, 21, 22, 25]
+
+plt.figure(figsize=(7, 4))
+plt.violinplot([g1, g2, g3], showmeans=True)
+plt.tight_layout()
+plt.show()`,
+    keywords: ["violinplot", "小提琴图", "分布形状", "density"],
+    related: ["sns-violinplot", "plt-boxplot", "sns-boxenplot"],
+  }),
+  createCommand({
+    id: "plt-eventplot",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.eventplot()",
+    alias: "事件时间线图",
+    summary: "适合展示事件发生时刻、脉冲位置或实验刺激时间点。",
+    syntax: "plt.eventplot(event_positions)",
+    code: `import matplotlib.pyplot as plt
+
+event_positions = [[1, 2, 4.5], [0.5, 3.2, 5.0], [2.1, 2.8, 4.0]]
+
+plt.figure(figsize=(7, 4))
+plt.eventplot(event_positions, linewidths=1.8)
+plt.tight_layout()
+plt.show()`,
+    keywords: ["eventplot", "事件图", "时间线", "脉冲位置"],
+    related: ["plt-stem", "plt-step", "sp-signal-find-peaks"],
+  }),
+  createCommand({
+    id: "plt-quiver",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.quiver()",
+    alias: "向量箭头图",
+    summary: "适合展示方向场、梯度场或二维运动方向。",
+    syntax: "plt.quiver(X, Y, U, V)",
+    code: `import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(-1, 1, 8)
+y = np.linspace(-1, 1, 8)
+X, Y = np.meshgrid(x, y)
+U = -Y
+V = X
+
+plt.figure(figsize=(6, 5))
+plt.quiver(X, Y, U, V)
+plt.tight_layout()
+plt.show()`,
+    keywords: ["quiver", "向量场", "箭头图", "gradient field"],
+    related: ["plt-streamplot", "np-meshgrid", "plt-contourf"],
+  }),
+  createCommand({
+    id: "plt-streamplot",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.streamplot()",
+    alias: "流线图",
+    summary: "适合展示连续流场的走向，比离散箭头更强调流动路径。",
+    syntax: "plt.streamplot(X, Y, U, V)",
+    code: `import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(-2, 2, 40)
+y = np.linspace(-2, 2, 40)
+X, Y = np.meshgrid(x, y)
+U = 1 - Y**2
+V = X
+
+plt.figure(figsize=(6, 5))
+plt.streamplot(X, Y, U, V, density=1.2)
+plt.tight_layout()
+plt.show()`,
+    keywords: ["streamplot", "流线图", "流场", "vector flow"],
+    related: ["plt-quiver", "np-meshgrid", "plt-contourf"],
+  }),
+  createCommand({
+    id: "plt-matshow",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.matshow()",
+    alias: "矩阵可视化",
+    summary: "适合快速把二维矩阵直接展示成颜色块结构。",
+    syntax: 'plt.matshow(matrix, cmap="viridis")',
+    code: `import numpy as np
+import matplotlib.pyplot as plt
+
+matrix = np.array([[1, 2, 3], [2, 4, 6], [1, 0, 5]])
+
+plt.figure(figsize=(5, 4))
+plt.matshow(matrix, cmap="viridis", fignum=0)
+plt.colorbar()
+plt.show()`,
+    keywords: ["matshow", "矩阵图", "二维矩阵", "heatmap quick"],
+    related: ["plt-imshow", "plt-colorbar", "sns-heatmap"],
+  }),
+  createCommand({
+    id: "plt-table",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.table()",
+    alias: "在图中嵌入表格",
+    summary: "适合把摘要数值、指标说明或小型汇总表直接嵌到图里。",
+    syntax: 'plt.table(cellText=data, colLabels=["A", "B"])',
+    code: `import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(6, 3))
+ax.axis("off")
+table = plt.table(
+    cellText=[[120, 32], [138, 29]],
+    colLabels=["Sales", "Profit"],
+    rowLabels=["Jan", "Feb"],
+    loc="center"
+)
+table.scale(1, 1.6)
+plt.show()`,
+    keywords: ["table", "图内表格", "summary table", "cellText"],
+    related: ["plt-subplots", "plt-suptitle", "pd-to-excel-csv"],
+  }),
+  createCommand({
+    id: "plt-suptitle",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.suptitle()",
+    alias: "整张图设置总标题",
+    summary: "适合多子图布局时用一个总标题概括整个看板或分析主题。",
+    syntax: 'plt.suptitle("Q1 Sales Dashboard")',
+    code: `import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+axes[0].plot([1, 2, 3], [10, 14, 18])
+axes[1].bar(["A", "B", "C"], [12, 9, 15])
+plt.suptitle("Q1 Sales Dashboard")
+plt.tight_layout()
+plt.show()`,
+    keywords: ["suptitle", "总标题", "dashboard title", "multi subplot"],
+    related: ["plt-subplots", "plt-tight-layout", "plt-subplots-adjust"],
+  }),
+  createCommand({
+    id: "plt-tight-layout",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.tight_layout()",
+    alias: "自动压紧子图布局",
+    summary: "适合避免标题、标签和图例相互遮挡，是多子图出图前的高频收尾动作。",
+    syntax: "plt.tight_layout()",
+    code: `import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+axes[0].bar(["Long Label A", "Long Label B"], [12, 16])
+axes[1].plot([1, 2, 3], [10, 18, 15])
+plt.tight_layout()
+plt.show()`,
+    keywords: ["tight_layout", "自动布局", "防遮挡", "subplot spacing"],
+    related: ["plt-subplots-adjust", "plt-suptitle", "sns-move-legend"],
+  }),
+  createCommand({
+    id: "plt-subplots-adjust",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.subplots_adjust()",
+    alias: "手动微调子图边距",
+    summary: "当自动布局不够理想时，适合手动控制上下左右和子图间距。",
+    syntax: "plt.subplots_adjust(top=0.85, wspace=0.3)",
+    code: `import matplotlib.pyplot as plt
+
+fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+axes[0].plot([1, 2, 3], [10, 12, 18])
+axes[1].bar(["A", "B", "C"], [5, 7, 6])
+plt.subplots_adjust(top=0.82, wspace=0.35)
+plt.show()`,
+    keywords: ["subplots_adjust", "手动布局", "wspace", "hspace"],
+    related: ["plt-tight-layout", "plt-subplots", "plt-suptitle"],
+  }),
+  createCommand({
+    id: "plt-axline",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.axline()",
+    alias: "画一条无限延展的参考直线",
+    summary: "适合添加基准斜率线、理想对角线或理论关系线。",
+    syntax: "plt.axline((0, 0), slope=1)",
+    code: `import matplotlib.pyplot as plt
+
+plt.figure(figsize=(6, 4))
+plt.scatter([1, 2, 3, 4], [0.8, 2.1, 2.8, 4.4])
+plt.axline((0, 0), slope=1, color="#b9793e")
+plt.tight_layout()
+plt.show()`,
+    keywords: ["axline", "参考直线", "对角线", "slope"],
+    related: ["plt-axhline-axvline", "sns-regplot", "sp-stats-linregress"],
+  }),
+  createCommand({
+    id: "plt-hexbin",
+    library: "matplotlib",
+    category: "plot",
+    title: "plt.hexbin()",
+    alias: "六边形密度图",
+    summary: "适合高密度散点，能比普通散点图更清楚地展示集中区和离散区。",
+    syntax: 'plt.hexbin(x, y, gridsize=25, cmap="viridis")',
+    code: `import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(7)
+x = rng.normal(0, 1, 800)
+y = 0.7 * x + rng.normal(0, 0.8, 800)
+
+plt.figure(figsize=(6, 4))
+plt.hexbin(x, y, gridsize=25, cmap="viridis")
+plt.colorbar()
+plt.tight_layout()
+plt.show()`,
+    keywords: ["hexbin", "六边形密度图", "高密度散点", "binning"],
+    related: ["plt-scatter", "sns-kdeplot", "plt-colorbar"],
+  }),
+  createCommand({
+    id: "sp-stats-zscore",
+    library: "scipy",
+    category: "stats",
+    title: "stats.zscore()",
+    alias: "计算标准分数 z-score",
+    summary: "适合做变量标准化、异常值初筛或让不同量纲的指标进入同一比较尺度。",
+    syntax: 'stats.zscore(values, nan_policy="omit")',
+    code: `import numpy as np
+from scipy import stats
+
+values = np.array([12, 14, 15, 16, 20, 25], dtype=float)
+z = stats.zscore(values, nan_policy="omit")
+
+print(z.round(3))`,
+    keywords: ["zscore", "标准化", "异常值初筛", "scipy stats"],
+    related: ["np-mean-axis", "sp-stats-shapiro", "sp-stats-gaussian-kde"],
+  }),
+  createCommand({
+    id: "sp-stats-ttest-ind",
+    library: "scipy",
+    category: "stats",
+    title: "stats.ttest_ind()",
+    alias: "独立样本 t 检验",
+    summary: "适合比较两组独立样本的均值是否存在显著差异。",
+    syntax: "stats.ttest_ind(group_a, group_b, equal_var=False)",
+    code: `import numpy as np
+from scipy import stats
+
+group_a = np.array([102, 98, 105, 110, 108], dtype=float)
+group_b = np.array([95, 97, 99, 100, 96], dtype=float)
+
+result = stats.ttest_ind(group_a, group_b, equal_var=False)
+print(result)`,
+    keywords: ["ttest_ind", "独立样本 t 检验", "均值差异", "welch"],
+    related: ["sp-stats-ttest-rel", "sp-stats-mannwhitneyu", "sp-stats-zscore"],
+  }),
+  createCommand({
+    id: "sp-stats-ttest-rel",
+    library: "scipy",
+    category: "stats",
+    title: "stats.ttest_rel()",
+    alias: "配对样本 t 检验",
+    summary: "适合比较同一对象处理前后、实验前后等配对样本的均值差异。",
+    syntax: "stats.ttest_rel(before, after)",
+    code: `import numpy as np
+from scipy import stats
+
+before = np.array([78, 81, 75, 80, 77], dtype=float)
+after = np.array([82, 83, 79, 84, 80], dtype=float)
+
+result = stats.ttest_rel(before, after)
+print(result)`,
+    keywords: ["ttest_rel", "配对 t 检验", "前后对比", "paired test"],
+    related: ["sp-stats-ttest-ind", "sp-stats-shapiro", "sp-stats-wilcoxon"],
+  }),
+  createCommand({
+    id: "sp-stats-wilcoxon",
+    library: "scipy",
+    category: "stats",
+    title: "stats.wilcoxon()",
+    alias: "Wilcoxon 配对非参数检验",
+    summary: "适合成对样本不满足正态假设时，比较前后变化是否显著。",
+    syntax: 'stats.wilcoxon(before, after, alternative="two-sided")',
+    code: `import numpy as np
+from scipy import stats
+
+before = np.array([78, 81, 75, 80, 77], dtype=float)
+after = np.array([82, 83, 79, 84, 80], dtype=float)
+
+result = stats.wilcoxon(before, after, alternative="two-sided")
+print(result)`,
+    keywords: ["wilcoxon", "配对非参数检验", "before after", "signed-rank"],
+    related: ["sp-stats-ttest-rel", "sp-stats-mannwhitneyu", "sp-stats-shapiro"],
+  }),
+  createCommand({
+    id: "sp-stats-chi2",
+    library: "scipy",
+    category: "stats",
+    title: "stats.chi2_contingency()",
+    alias: "卡方独立性检验",
+    summary: "适合判断两个分类变量是否独立，比如渠道和是否转化之间是否有关联。",
+    syntax: "stats.chi2_contingency(table)",
+    code: `import numpy as np
+from scipy import stats
+
+table = np.array([[42, 18], [28, 31]])
+chi2, pvalue, dof, expected = stats.chi2_contingency(table)
+
+print(chi2, pvalue)`,
+    keywords: ["chi2_contingency", "卡方检验", "分类变量独立性", "列联表"],
+    related: ["pd-crosstab", "sp-stats-f-oneway", "sp-stats-pearsonr"],
+  }),
+  createCommand({
+    id: "sp-stats-f-oneway",
+    library: "scipy",
+    category: "stats",
+    title: "stats.f_oneway()",
+    alias: "单因素方差分析 ANOVA",
+    summary: "适合比较两组以上样本的均值是否存在整体差异。",
+    syntax: "stats.f_oneway(group_a, group_b, group_c)",
+    code: `import numpy as np
+from scipy import stats
+
+group_a = np.array([12, 14, 13, 15])
+group_b = np.array([17, 18, 16, 19])
+group_c = np.array([22, 20, 24, 21])
+
+result = stats.f_oneway(group_a, group_b, group_c)
+print(result)`,
+    keywords: ["f_oneway", "anova", "方差分析", "多组均值"],
+    related: ["sp-stats-ttest-ind", "sp-stats-mannwhitneyu", "sns-boxenplot"],
+  }),
+  createCommand({
+    id: "sp-stats-pearsonr",
+    library: "scipy",
+    category: "stats",
+    title: "stats.pearsonr()",
+    alias: "皮尔逊相关检验",
+    summary: "适合衡量两个连续变量之间的线性相关强度和显著性。",
+    syntax: "stats.pearsonr(x, y)",
+    code: `import numpy as np
+from scipy import stats
+
+x = np.array([1, 2, 3, 4, 5, 6], dtype=float)
+y = np.array([12, 14, 17, 18, 21, 24], dtype=float)
+
+result = stats.pearsonr(x, y)
+print(result)`,
+    keywords: ["pearsonr", "皮尔逊相关", "线性相关", "pvalue"],
+    related: ["sp-stats-spearmanr", "np-corrcoef", "sp-stats-linregress"],
+  }),
+  createCommand({
+    id: "sp-stats-spearmanr",
+    library: "scipy",
+    category: "stats",
+    title: "stats.spearmanr()",
+    alias: "斯皮尔曼秩相关检验",
+    summary: "适合非线性但单调的关系、或对异常值更稳健的相关性分析。",
+    syntax: "stats.spearmanr(x, y)",
+    code: `import numpy as np
+from scipy import stats
+
+x = np.array([1, 2, 3, 4, 5, 6], dtype=float)
+y = np.array([10, 13, 15, 16, 16.5, 17], dtype=float)
+
+result = stats.spearmanr(x, y)
+print(result)`,
+    keywords: ["spearmanr", "秩相关", "单调关系", "rank correlation"],
+    related: ["sp-stats-pearsonr", "sp-stats-mannwhitneyu", "sns-scatterplot"],
+  }),
+  createCommand({
+    id: "sp-stats-shapiro",
+    library: "scipy",
+    category: "stats",
+    title: "stats.shapiro()",
+    alias: "Shapiro-Wilk 正态性检验",
+    summary: "适合在样本量不大时快速判断数据是否近似正态分布。",
+    syntax: "stats.shapiro(values)",
+    code: `import numpy as np
+from scipy import stats
+
+values = np.array([8.1, 8.4, 8.8, 9.2, 9.3, 9.6, 10.1], dtype=float)
+result = stats.shapiro(values)
+
+print(result)`,
+    keywords: ["shapiro", "正态性检验", "normality", "分布检查"],
+    related: ["sp-stats-zscore", "sp-stats-ttest-ind", "sns-histplot"],
+  }),
+  createCommand({
+    id: "sp-stats-mannwhitneyu",
+    library: "scipy",
+    category: "stats",
+    title: "stats.mannwhitneyu()",
+    alias: "Mann-Whitney U 非参数检验",
+    summary: "适合在分布不满足正态假设时比较两组样本是否存在位置差异。",
+    syntax: 'stats.mannwhitneyu(group_a, group_b, alternative="two-sided")',
+    code: `import numpy as np
+from scipy import stats
+
+group_a = np.array([4, 5, 6, 7, 10], dtype=float)
+group_b = np.array([2, 3, 4, 4, 5], dtype=float)
+
+result = stats.mannwhitneyu(group_a, group_b, alternative="two-sided")
+print(result)`,
+    keywords: ["mannwhitneyu", "非参数检验", "两独立样本", "rank test"],
+    related: ["sp-stats-ttest-ind", "sp-stats-spearmanr", "sp-stats-f-oneway"],
+  }),
+  createCommand({
+    id: "sp-stats-linregress",
+    library: "scipy",
+    category: "stats",
+    title: "stats.linregress()",
+    alias: "快速线性回归",
+    summary: "适合快速获取斜率、截距、相关系数和显著性，而不用搭完整建模框架。",
+    syntax: "stats.linregress(x, y)",
+    code: `import numpy as np
+from scipy import stats
+
+x = np.array([1, 2, 3, 4, 5], dtype=float)
+y = np.array([2.2, 2.8, 3.7, 4.4, 5.1], dtype=float)
+
+result = stats.linregress(x, y)
+print(result)`,
+    keywords: ["linregress", "线性回归", "斜率", "截距"],
+    related: ["sp-stats-pearsonr", "sns-regplot", "plt-axline"],
+  }),
+  createCommand({
+    id: "sp-stats-gaussian-kde",
+    library: "scipy",
+    category: "stats",
+    title: "stats.gaussian_kde()",
+    alias: "高斯核密度估计",
+    summary: "适合手动构造 KDE 估计器，在需要进一步自定义采样点评估时很方便。",
+    syntax: 'stats.gaussian_kde(values, bw_method="scott")',
+    code: `import numpy as np
+from scipy import stats
+
+values = np.array([12, 14, 15, 16, 18, 20, 21], dtype=float)
+kde = stats.gaussian_kde(values, bw_method="scott")
+grid = np.linspace(values.min(), values.max(), 8)
+
+print(kde(grid))`,
+    keywords: ["gaussian_kde", "核密度估计", "kde", "bandwidth"],
+    related: ["sns-kdeplot", "sns-histplot", "sp-stats-shapiro"],
+  }),
+  createCommand({
+    id: "sp-interpolate-interp1d",
+    library: "scipy",
+    category: "numeric",
+    title: "interpolate.interp1d()",
+    alias: "一维插值函数",
+    summary: "适合在已知离散点之间插值估计，常见于补齐曲线、重采样和缺口填补。",
+    syntax: 'interpolate.interp1d(x, y, kind="linear", fill_value="extrapolate")',
+    code: `import numpy as np
+from scipy import interpolate
+
+x = np.array([0, 1, 2, 4, 6], dtype=float)
+y = np.array([0, 2, 3, 3.5, 5], dtype=float)
+interp = interpolate.interp1d(x, y, kind="linear", fill_value="extrapolate")
+
+print(interp(np.array([1.5, 3.0, 5.0])))`,
+    keywords: ["interp1d", "一维插值", "重采样", "缺口补齐"],
+    related: ["sp-interpolate-spline", "pd-interpolate", "sp-signal-savgol"],
+  }),
+  createCommand({
+    id: "sp-interpolate-spline",
+    library: "scipy",
+    category: "numeric",
+    title: "interpolate.UnivariateSpline()",
+    alias: "一维样条平滑拟合",
+    summary: "适合在插值和拟合之间取得平衡，让曲线更平滑地贴合数据。",
+    syntax: "interpolate.UnivariateSpline(x, y, k=3, s=0.5)",
+    code: `import numpy as np
+from scipy import interpolate
+
+x = np.array([0, 1, 2, 4, 6], dtype=float)
+y = np.array([0, 2, 3, 3.5, 5], dtype=float)
+spline = interpolate.UnivariateSpline(x, y, k=3, s=0.5)
+
+print(spline(np.linspace(0, 6, 6)))`,
+    keywords: ["UnivariateSpline", "样条拟合", "平滑曲线", "spline"],
+    related: ["sp-interpolate-interp1d", "sp-signal-savgol", "plt-plot"],
+  }),
+  createCommand({
+    id: "sp-signal-savgol",
+    library: "scipy",
+    category: "signal",
+    title: "signal.savgol_filter()",
+    alias: "Savitzky-Golay 平滑滤波",
+    summary: "适合平滑噪声序列，同时尽量保留峰值形状和趋势结构。",
+    syntax: "signal.savgol_filter(series, window_length=5, polyorder=2)",
+    code: `import numpy as np
+from scipy import signal
+
+series = np.array([2.0, 2.2, 2.5, 2.9, 3.8, 3.2, 3.1, 3.3, 3.5])
+smoothed = signal.savgol_filter(series, window_length=5, polyorder=2)
+
+print(smoothed.round(3))`,
+    keywords: ["savgol_filter", "平滑滤波", "保留峰形", "denoise"],
+    related: ["sp-signal-find-peaks", "sp-interpolate-spline", "np-diff-gradient"],
+  }),
+  createCommand({
+    id: "sp-signal-find-peaks",
+    library: "scipy",
+    category: "signal",
+    title: "signal.find_peaks()",
+    alias: "查找峰值位置",
+    summary: "适合识别局部峰值点，并按高度、突显度、间距等规则过滤噪声峰。",
+    syntax: "signal.find_peaks(series, distance=2, prominence=1)",
+    code: `import numpy as np
+from scipy import signal
+
+series = np.array([1, 3, 2, 5, 1, 4, 1, 6, 1], dtype=float)
+peaks, props = signal.find_peaks(series, distance=2, prominence=1)
+
+print(peaks)`,
+    keywords: ["find_peaks", "峰值检测", "prominence", "distance"],
+    related: ["sp-signal-savgol", "sp-signal-correlate", "plt-eventplot"],
+  }),
+  createCommand({
+    id: "sp-signal-convolve",
+    library: "scipy",
+    category: "signal",
+    title: "signal.convolve()",
+    alias: "卷积信号或序列",
+    summary: "适合平滑、模板滤波或把一个核作用到序列上。",
+    syntax: 'signal.convolve(signal_a, signal_b, mode="same")',
+    code: `import numpy as np
+from scipy import signal
+
+signal_a = np.array([0, 1, 2, 1, 0], dtype=float)
+kernel = np.array([0.25, 0.5, 0.25], dtype=float)
+result = signal.convolve(signal_a, kernel, mode="same")
+
+print(result.round(3))`,
+    keywords: ["convolve", "卷积", "平滑核", "filter"],
+    related: ["sp-signal-correlate", "sp-signal-savgol", "np-pad"],
+  }),
+  createCommand({
+    id: "sp-signal-correlate",
+    library: "scipy",
+    category: "signal",
+    title: "signal.correlate()",
+    alias: "计算相关序列",
+    summary: "适合做模板匹配、延迟对齐或寻找两个序列之间的相似偏移。",
+    syntax: 'signal.correlate(signal_a, signal_b, mode="full")',
+    code: `import numpy as np
+from scipy import signal
+
+signal_a = np.array([0, 1, 2, 1, 0], dtype=float)
+signal_b = np.array([1, 0, -1], dtype=float)
+result = signal.correlate(signal_a, signal_b, mode="full")
+
+print(result)`,
+    keywords: ["correlate", "相关序列", "模板匹配", "delay"],
+    related: ["sp-signal-convolve", "sp-signal-find-peaks", "np-corrcoef"],
+  }),
+  createCommand({
+    id: "sp-optimize-minimize",
+    library: "scipy",
+    category: "optimize",
+    title: "optimize.minimize()",
+    alias: "数值最小化求解",
+    summary: "适合最小化损失函数、成本函数或距离函数，是通用优化入口。",
+    syntax: 'optimize.minimize(objective, x0=[0, 0], method="BFGS")',
+    code: `from scipy import optimize
+
+def objective(x):
+    return (x[0] - 2) ** 2 + (x[1] + 1) ** 2
+
+result = optimize.minimize(objective, x0=[0, 0], method="BFGS")
+print(result.x)`,
+    keywords: ["minimize", "优化", "损失函数", "BFGS"],
+    related: ["sp-optimize-root", "sp-optimize-curve-fit", "np-linalg-norm"],
+  }),
+  createCommand({
+    id: "sp-optimize-curve-fit",
+    library: "scipy",
+    category: "optimize",
+    title: "optimize.curve_fit()",
+    alias: "非线性曲线拟合",
+    summary: "适合根据观测数据拟合指数、幂律、饱和曲线等参数模型。",
+    syntax: "optimize.curve_fit(model, xdata, ydata, p0=[1, 0.1])",
+    code: `import numpy as np
+from scipy import optimize
+
+def model(x, a, b):
+    return a * np.exp(b * x)
+
+xdata = np.array([0, 1, 2, 3, 4], dtype=float)
+ydata = np.array([2.0, 2.8, 4.1, 5.8, 8.2], dtype=float)
+params, cov = optimize.curve_fit(model, xdata, ydata, p0=[1, 0.1])
+
+print(params)`,
+    keywords: ["curve_fit", "曲线拟合", "参数估计", "nonlinear fit"],
+    related: ["sp-optimize-minimize", "sp-stats-linregress", "plt-plot"],
+  }),
+  createCommand({
+    id: "sp-optimize-root",
+    library: "scipy",
+    category: "optimize",
+    title: "optimize.root()",
+    alias: "求方程或方程组的根",
+    summary: "适合求解非线性方程等于零的位置，是校准和方程反解的常见入口。",
+    syntax: "optimize.root(equation, x0=2.0)",
+    code: `from scipy import optimize
+
+def equation(x):
+    return x**3 - 2 * x - 5
+
+result = optimize.root(equation, x0=2.0)
+print(result.x)`,
+    keywords: ["root", "求根", "非线性方程", "solve equation"],
+    related: ["sp-optimize-minimize", "np-linalg-solve", "sp-optimize-linprog"],
+  }),
+  createCommand({
+    id: "sp-optimize-linprog",
+    library: "scipy",
+    category: "optimize",
+    title: "optimize.linprog()",
+    alias: "线性规划",
+    summary: "适合求解资源分配、产能约束、运输成本最小化这类线性优化问题。",
+    syntax: 'optimize.linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=(0, None), method="highs")',
+    code: `from scipy import optimize
+
+c = [-5, -4]
+A_ub = [[6, 4], [1, 2], [-1, 1]]
+b_ub = [24, 6, 1]
+
+result = optimize.linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=(0, None), method="highs")
+print(result.x)`,
+    keywords: ["linprog", "线性规划", "资源分配", "约束优化"],
+    related: ["sp-optimize-minimize", "sp-optimize-root", "np-linalg-solve"],
+  }),
+  createCommand({
+    id: "sp-spatial-cdist",
+    library: "scipy",
+    category: "numeric",
+    title: "distance.cdist()",
+    alias: "两组样本之间的距离矩阵",
+    summary: "适合计算两批样本两两之间的距离，为最近邻、聚类前处理或相似度分析做准备。",
+    syntax: 'distance.cdist(XA, XB, metric="euclidean")',
+    code: `import numpy as np
+from scipy.spatial import distance
+
+XA = np.array([[0, 0], [1, 1], [2, 2]], dtype=float)
+XB = np.array([[0, 1], [2, 1]], dtype=float)
+dist = distance.cdist(XA, XB, metric="euclidean")
+
+print(dist)`,
+    keywords: ["cdist", "距离矩阵", "最近邻", "样本相似度"],
+    related: ["sp-spatial-pdist-squareform", "np-linalg-norm", "sns-heatmap"],
+  }),
+  createCommand({
+    id: "sp-spatial-pdist-squareform",
+    library: "scipy",
+    category: "numeric",
+    title: "distance.pdist() + squareform()",
+    alias: "同一组样本内部的距离矩阵",
+    summary: "适合把一批点之间的两两距离变成对称矩阵，方便聚类或热力图展示。",
+    syntax: 'distance.squareform(distance.pdist(points, metric="euclidean"))',
+    code: `import numpy as np
+from scipy.spatial import distance
+
+points = np.array([[0, 0], [1, 1], [2, 1], [2, 3]], dtype=float)
+matrix = distance.squareform(distance.pdist(points, metric="euclidean"))
+
+print(matrix)`,
+    keywords: ["pdist", "squareform", "内部距离矩阵", "cluster distance"],
+    related: ["sp-spatial-cdist", "sns-clustermap", "sns-heatmap"],
+  }),
+  createCommand({
+    id: "sp-sparse-csr",
+    library: "scipy",
+    category: "numeric",
+    title: "sparse.csr_matrix()",
+    alias: "构造 CSR 稀疏矩阵",
+    summary: "适合大规模稀疏特征、用户-物品矩阵或图算法输入，能显著节省内存。",
+    syntax: "sparse.csr_matrix(dense)",
+    code: `import numpy as np
+from scipy import sparse
+
+dense = np.array([[0, 1, 0], [2, 0, 0], [0, 0, 3]])
+matrix = sparse.csr_matrix(dense)
+
+print(matrix.toarray())`,
+    keywords: ["csr_matrix", "稀疏矩阵", "sparse", "memory efficient"],
+    related: ["np-array", "sp-spatial-cdist", "pd-get-dummies"],
+  }),
+  createCommand({
+    id: "sp-special-expit",
+    library: "scipy",
+    category: "numeric",
+    title: "special.expit()",
+    alias: "Sigmoid 函数",
+    summary: "适合把实数映射到 0 到 1 区间，常见于概率分数、逻辑回归和阈值平滑转换。",
+    syntax: "special.expit(logits)",
+    code: `import numpy as np
+from scipy import special
+
+logits = np.array([-3.0, -1.0, 0.0, 1.0, 3.0])
+probs = special.expit(logits)
+
+print(probs.round(4))`,
+    keywords: ["expit", "sigmoid", "概率映射", "logistic"],
+    related: ["np-log-sqrt", "np-isclose-allclose", "sp-optimize-minimize"],
   }),
 ]

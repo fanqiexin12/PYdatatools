@@ -777,6 +777,42 @@ kbd {
   gap: 0.8rem;
 }
 
+.visual-demo-card {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.visual-demo-frame {
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at top left, rgba(31, 111, 120, 0.1), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.38));
+}
+
+.visual-demo-frame svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.visual-demo-copy {
+  padding: 0 0.2rem;
+}
+
+.visual-demo-copy h5 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.visual-demo-copy p {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
 .parameter-card,
 .example-card {
   padding: 0.95rem 1rem;

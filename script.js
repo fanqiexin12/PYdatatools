@@ -14,6 +14,8 @@ const indexedCommands = commands.map((command) => ({
     command.professionalDetail,
     command.parameters.map((item) => `${item.name} ${item.meaning} ${item.detail}`).join(" "),
     command.examples.map((item) => `${item.title} ${item.note} ${item.code}`).join(" "),
+    command.visualDemo?.title ?? "",
+    command.visualDemo?.note ?? "",
   ]
     .join(" ")
     .toLowerCase(),
@@ -58,6 +60,366 @@ function escapeHtml(value) {
 
 function normalize(text) {
   return String(text).trim().toLowerCase()
+}
+
+function buildVisualPreviewSvg(type) {
+  switch (type) {
+    case "heatmap":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(42 34)">
+            <g fill="#d7ece8">
+              <rect x="0" y="0" width="34" height="24" rx="7" />
+              <rect x="40" y="0" width="34" height="24" rx="7" fill="#a7d8cf" />
+              <rect x="80" y="0" width="34" height="24" rx="7" fill="#5ca6a4" />
+              <rect x="120" y="0" width="34" height="24" rx="7" fill="#dfe8a7" />
+              <rect x="160" y="0" width="34" height="24" rx="7" fill="#d38754" />
+              <rect x="0" y="30" width="34" height="24" rx="7" fill="#8ec9c8" />
+              <rect x="40" y="30" width="34" height="24" rx="7" fill="#6ab3b0" />
+              <rect x="80" y="30" width="34" height="24" rx="7" fill="#d38754" />
+              <rect x="120" y="30" width="34" height="24" rx="7" fill="#f2c171" />
+              <rect x="160" y="30" width="34" height="24" rx="7" fill="#9fd3ca" />
+              <rect x="0" y="60" width="34" height="24" rx="7" fill="#d38754" />
+              <rect x="40" y="60" width="34" height="24" rx="7" fill="#f2c171" />
+              <rect x="80" y="60" width="34" height="24" rx="7" fill="#f5f0cf" />
+              <rect x="120" y="60" width="34" height="24" rx="7" fill="#4d8f93" />
+              <rect x="160" y="60" width="34" height="24" rx="7" fill="#7ebfbb" />
+              <rect x="0" y="90" width="34" height="24" rx="7" fill="#b9ddd7" />
+              <rect x="40" y="90" width="34" height="24" rx="7" fill="#5ca6a4" />
+              <rect x="80" y="90" width="34" height="24" rx="7" fill="#7ebfbb" />
+              <rect x="120" y="90" width="34" height="24" rx="7" fill="#d38754" />
+              <rect x="160" y="90" width="34" height="24" rx="7" fill="#f2c171" />
+            </g>
+            <rect x="212" y="0" width="16" height="114" rx="8" fill="url(#heatLegend)" />
+          </g>
+          <defs>
+            <linearGradient id="heatLegend" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#d38754" />
+              <stop offset="50%" stop-color="#f2c171" />
+              <stop offset="100%" stop-color="#4d8f93" />
+            </linearGradient>
+          </defs>
+        </svg>
+      `
+    case "grid":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(34 32)">
+            <g fill="#ffffff" stroke="#d7e3e7" stroke-width="1.2">
+              <rect x="0" y="0" width="112" height="56" rx="12" />
+              <rect x="126" y="0" width="112" height="56" rx="12" />
+              <rect x="0" y="70" width="112" height="56" rx="12" />
+              <rect x="126" y="70" width="112" height="56" rx="12" />
+            </g>
+            <path d="M12 40 C26 20, 44 18, 60 34 S94 44, 100 22" fill="none" stroke="#1f6f78" stroke-width="3" />
+            <g fill="#b9793e">
+              <circle cx="154" cy="20" r="5" />
+              <circle cx="174" cy="32" r="5" />
+              <circle cx="198" cy="24" r="5" />
+              <circle cx="220" cy="38" r="5" />
+            </g>
+            <g fill="#7bb8b1">
+              <rect x="12" y="101" width="18" height="17" rx="5" />
+              <rect x="36" y="92" width="18" height="26" rx="5" />
+              <rect x="60" y="84" width="18" height="34" rx="5" />
+              <rect x="84" y="96" width="18" height="22" rx="5" />
+            </g>
+            <path d="M144 108 C160 88, 180 82, 196 96 S222 118, 230 86" fill="none" stroke="#b9793e" stroke-width="3" />
+          </g>
+        </svg>
+      `
+    case "palette":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(42 48)">
+            <rect x="0" y="10" width="34" height="78" rx="12" fill="#143c44" />
+            <rect x="40" y="0" width="34" height="88" rx="12" fill="#1f6f78" />
+            <rect x="80" y="16" width="34" height="72" rx="12" fill="#5ca6a4" />
+            <rect x="120" y="8" width="34" height="80" rx="12" fill="#b7ddd5" />
+            <rect x="160" y="22" width="34" height="66" rx="12" fill="#efc58c" />
+            <rect x="200" y="12" width="34" height="76" rx="12" fill="#b9793e" />
+          </g>
+          <defs>
+            <linearGradient id="paletteStrip" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0%" stop-color="#143c44" />
+              <stop offset="18%" stop-color="#1f6f78" />
+              <stop offset="40%" stop-color="#5ca6a4" />
+              <stop offset="64%" stop-color="#b7ddd5" />
+              <stop offset="82%" stop-color="#efc58c" />
+              <stop offset="100%" stop-color="#b9793e" />
+            </linearGradient>
+          </defs>
+          <rect x="54" y="140" width="212" height="16" rx="8" fill="url(#paletteStrip)" />
+        </svg>
+      `
+    case "box":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(42 34)">
+            <line x1="18" y1="114" x2="218" y2="114" stroke="#cad7dc" stroke-width="1.5" />
+            <g stroke="#1f6f78" fill="#d6ece8" stroke-width="2.2">
+              <path d="M18 86 C8 66, 8 48, 18 28 C28 48, 28 66, 18 86 Z" />
+              <path d="M78 100 C64 82, 64 42, 78 24 C92 42, 92 82, 78 100 Z" fill="#f1d5b6" stroke="#b9793e" />
+              <path d="M138 92 C126 74, 126 54, 138 30 C150 54, 150 74, 138 92 Z" fill="#cce4dd" />
+            </g>
+            <g stroke="#16333b" stroke-width="2">
+              <line x1="18" y1="18" x2="18" y2="102" />
+              <line x1="78" y1="12" x2="78" y2="108" />
+              <line x1="138" y1="22" x2="138" y2="104" />
+              <rect x="172" y="38" width="30" height="42" rx="8" fill="#ffffff" />
+              <line x1="187" y1="24" x2="187" y2="96" />
+              <line x1="172" y1="58" x2="202" y2="58" />
+            </g>
+          </g>
+        </svg>
+      `
+    case "distribution":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(38 34)">
+            <line x1="0" y1="114" x2="228" y2="114" stroke="#cad7dc" stroke-width="1.5" />
+            <g fill="#d9ece8">
+              <rect x="16" y="76" width="20" height="38" rx="6" />
+              <rect x="42" y="56" width="20" height="58" rx="6" />
+              <rect x="68" y="36" width="20" height="78" rx="6" />
+              <rect x="94" y="24" width="20" height="90" rx="6" />
+              <rect x="120" y="40" width="20" height="74" rx="6" />
+              <rect x="146" y="62" width="20" height="52" rx="6" />
+              <rect x="172" y="84" width="20" height="30" rx="6" />
+            </g>
+            <path d="M10 108 C34 82, 52 34, 88 28 S146 56, 170 84 S206 108, 224 106" fill="none" stroke="#1f6f78" stroke-width="4" />
+            <path d="M10 102 C34 100, 64 88, 92 70 S152 36, 224 26" fill="none" stroke="#b9793e" stroke-width="3" stroke-dasharray="7 7" />
+          </g>
+        </svg>
+      `
+    case "barh":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(46 42)">
+            <g fill="#cfe8e2">
+              <rect x="0" y="0" width="160" height="16" rx="8" />
+              <rect x="0" y="24" width="120" height="16" rx="8" />
+              <rect x="0" y="48" width="188" height="16" rx="8" fill="#b9ddd7" />
+              <rect x="0" y="72" width="90" height="16" rx="8" fill="#e9d2b7" />
+              <rect x="0" y="96" width="142" height="16" rx="8" fill="#f0c487" />
+            </g>
+            <line x1="0" y1="122" x2="220" y2="122" stroke="#cad7dc" stroke-width="1.5" />
+          </g>
+        </svg>
+      `
+    case "bar":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(42 34)">
+            <line x1="0" y1="114" x2="226" y2="114" stroke="#cad7dc" stroke-width="1.5" />
+            <g fill="#d6ece8">
+              <rect x="18" y="56" width="24" height="58" rx="8" />
+              <rect x="58" y="32" width="24" height="82" rx="8" fill="#b6ddd7" />
+              <rect x="98" y="68" width="24" height="46" rx="8" />
+              <rect x="138" y="20" width="24" height="94" rx="8" fill="#efc58c" />
+            </g>
+            <path d="M28 46 L70 24 L110 58 L150 18" fill="none" stroke="#b9793e" stroke-width="3" />
+            <g fill="#b9793e">
+              <circle cx="28" cy="46" r="4.5" />
+              <circle cx="70" cy="24" r="4.5" />
+              <circle cx="110" cy="58" r="4.5" />
+              <circle cx="150" cy="18" r="4.5" />
+            </g>
+          </g>
+        </svg>
+      `
+    case "scatter":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(40 34)">
+            <line x1="0" y1="114" x2="230" y2="114" stroke="#cad7dc" stroke-width="1.5" />
+            <line x1="0" y1="0" x2="0" y2="114" stroke="#cad7dc" stroke-width="1.5" />
+            <g fill="#1f6f78">
+              <circle cx="28" cy="84" r="6" />
+              <circle cx="52" cy="76" r="5" />
+              <circle cx="72" cy="58" r="7" />
+              <circle cx="98" cy="68" r="5" />
+              <circle cx="124" cy="52" r="8" />
+              <circle cx="146" cy="44" r="6" />
+              <circle cx="170" cy="38" r="7" />
+              <circle cx="198" cy="22" r="9" />
+            </g>
+            <g fill="#b9793e" opacity="0.72">
+              <circle cx="40" cy="96" r="4" />
+              <circle cx="86" cy="74" r="4" />
+              <circle cx="136" cy="64" r="4" />
+              <circle cx="186" cy="48" r="4" />
+            </g>
+          </g>
+        </svg>
+      `
+    case "regression":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(40 34)">
+            <line x1="0" y1="114" x2="230" y2="114" stroke="#cad7dc" stroke-width="1.5" />
+            <line x1="0" y1="0" x2="0" y2="114" stroke="#cad7dc" stroke-width="1.5" />
+            <g fill="#7bb8b1">
+              <circle cx="24" cy="92" r="5" />
+              <circle cx="52" cy="76" r="5" />
+              <circle cx="76" cy="68" r="5" />
+              <circle cx="106" cy="60" r="5" />
+              <circle cx="134" cy="44" r="5" />
+              <circle cx="168" cy="38" r="5" />
+              <circle cx="198" cy="22" r="5" />
+            </g>
+            <path d="M14 98 L210 16" fill="none" stroke="#b9793e" stroke-width="4" />
+            <path d="M14 114 C44 104, 84 104, 114 114 S174 124, 214 108" fill="none" stroke="#1f6f78" stroke-width="2.6" stroke-dasharray="6 6" />
+          </g>
+        </svg>
+      `
+    case "area":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(34 34)">
+            <line x1="0" y1="114" x2="236" y2="114" stroke="#cad7dc" stroke-width="1.5" />
+            <path d="M0 114 L0 84 C20 74, 42 64, 60 68 S100 82, 120 74 S168 48, 236 58 L236 114 Z" fill="#d7ece8" />
+            <path d="M0 114 L0 98 C20 92, 42 88, 60 92 S100 100, 120 94 S168 82, 236 84 L236 114 Z" fill="#b8ddd7" />
+            <path d="M0 114 L0 108 C34 106, 52 102, 76 104 S134 110, 236 98 L236 114 Z" fill="#efc58c" />
+          </g>
+        </svg>
+      `
+    case "vector":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(48 40)" stroke="#1f6f78" stroke-width="3" stroke-linecap="round">
+            <path d="M0 0 L28 10" />
+            <path d="M0 40 L28 38" />
+            <path d="M0 80 L26 68" />
+            <path d="M48 0 L68 26" />
+            <path d="M48 40 L76 40" />
+            <path d="M48 80 L70 56" />
+            <path d="M96 0 L96 28" />
+            <path d="M96 40 L118 50" />
+            <path d="M96 80 L120 88" />
+            <path d="M144 0 L122 20" />
+            <path d="M144 40 L122 40" />
+            <path d="M144 80 L122 62" />
+            <path d="M192 0 L168 2" />
+            <path d="M192 40 L166 30" />
+            <path d="M192 80 L164 70" />
+          </g>
+          <path d="M54 128 C82 102, 124 76, 170 62 S238 36, 268 28" fill="none" stroke="#b9793e" stroke-width="3" />
+        </svg>
+      `
+    case "pie":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(84 32)">
+            <circle cx="70" cy="62" r="50" fill="#d7ece8" />
+            <path d="M70 62 L70 12 A50 50 0 0 1 118 44 Z" fill="#efc58c" />
+            <path d="M70 62 L118 44 A50 50 0 0 1 102 102 Z" fill="#7bb8b1" />
+            <path d="M70 62 L102 102 A50 50 0 0 1 38 102 Z" fill="#b9793e" />
+            <circle cx="70" cy="62" r="22" fill="#f8faf9" />
+          </g>
+        </svg>
+      `
+    case "step":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(36 34)">
+            <line x1="0" y1="114" x2="236" y2="114" stroke="#cad7dc" stroke-width="1.5" />
+            <path d="M12 94 H48 V72 H86 V72 H124 V42 H168 V42 H206 V24" fill="none" stroke="#1f6f78" stroke-width="4" />
+            <g stroke="#b9793e" stroke-width="2.4">
+              <line x1="24" y1="114" x2="24" y2="82" />
+              <line x1="72" y1="114" x2="72" y2="60" />
+              <line x1="122" y1="114" x2="122" y2="66" />
+              <line x1="174" y1="114" x2="174" y2="34" />
+            </g>
+          </g>
+        </svg>
+      `
+    case "table":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(44 34)">
+            <rect x="0" y="0" width="220" height="108" rx="16" fill="#ffffff" stroke="#d5e1e5" />
+            <rect x="0" y="0" width="220" height="24" rx="16" fill="#d7ece8" />
+            <line x1="0" y1="24" x2="220" y2="24" stroke="#d5e1e5" />
+            <line x1="56" y1="0" x2="56" y2="108" stroke="#d5e1e5" />
+            <line x1="132" y1="0" x2="132" y2="108" stroke="#d5e1e5" />
+            <line x1="0" y1="52" x2="220" y2="52" stroke="#d5e1e5" />
+            <line x1="0" y1="80" x2="220" y2="80" stroke="#d5e1e5" />
+          </g>
+        </svg>
+      `
+    case "layout":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <rect x="42" y="28" width="152" height="18" rx="9" fill="#d7ece8" />
+          <g transform="translate(42 58)">
+            <rect x="0" y="0" width="138" height="86" rx="16" fill="#ffffff" stroke="#d5e1e5" />
+            <rect x="150" y="8" width="74" height="34" rx="14" fill="#ffffff" stroke="#d5e1e5" />
+            <rect x="150" y="52" width="74" height="28" rx="14" fill="#d7ece8" />
+            <path d="M18 70 L46 44 L76 56 L112 24" fill="none" stroke="#1f6f78" stroke-width="4" />
+            <circle cx="162" cy="22" r="5" fill="#1f6f78" />
+            <rect x="174" y="18" width="30" height="8" rx="4" fill="#d7ece8" />
+            <circle cx="162" cy="34" r="5" fill="#b9793e" />
+            <rect x="174" y="30" width="38" height="8" rx="4" fill="#efc58c" />
+          </g>
+        </svg>
+      `
+    case "line":
+    default:
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(34 34)">
+            <line x1="0" y1="114" x2="238" y2="114" stroke="#cad7dc" stroke-width="1.5" />
+            <line x1="0" y1="0" x2="0" y2="114" stroke="#cad7dc" stroke-width="1.5" />
+            <path d="M10 92 C32 82, 50 46, 76 52 S112 82, 136 66 S182 18, 226 26" fill="none" stroke="#1f6f78" stroke-width="4" />
+            <path d="M10 104 C36 100, 54 84, 82 88 S130 104, 154 94 S192 54, 226 60" fill="none" stroke="#b9793e" stroke-width="3" stroke-dasharray="8 6" />
+            <g fill="#1f6f78">
+              <circle cx="10" cy="92" r="4" />
+              <circle cx="76" cy="52" r="4" />
+              <circle cx="136" cy="66" r="4" />
+              <circle cx="226" cy="26" r="4" />
+            </g>
+          </g>
+        </svg>
+      `
+  }
+}
+
+function renderVisualDemo(command) {
+  if (!command.visualDemo) {
+    return ""
+  }
+
+  return `
+    <section class="detail-section">
+      <h4>图形示意</h4>
+      <article class="visual-demo-card">
+        <div class="visual-demo-frame">
+          ${buildVisualPreviewSvg(command.visualDemo.type)}
+        </div>
+        <div class="visual-demo-copy">
+          <h5>${escapeHtml(command.visualDemo.title)}</h5>
+          <p>${escapeHtml(command.visualDemo.note)}</p>
+        </div>
+      </article>
+    </section>
+  `
 }
 
 function getCommandById(id) {
@@ -456,6 +818,8 @@ function renderDetail() {
     )
     .join("")
 
+  const visualDemoMarkup = renderVisualDemo(command)
+
   refs.copyCodeButton.disabled = false
   refs.detailView.innerHTML = `
     <section class="detail-header">
@@ -502,6 +866,8 @@ function renderDetail() {
       <h4>参数说明</h4>
       <div class="parameter-list">${parameterMarkup}</div>
     </section>
+
+    ${visualDemoMarkup}
 
     <section class="detail-section">
       <h4>多示例</h4>
