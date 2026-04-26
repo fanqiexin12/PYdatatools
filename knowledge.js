@@ -19,6 +19,639 @@ function titleContains(command, token) {
   return haystack.includes(token.toLowerCase())
 }
 
+function createOfficialRef({ label, url, source, note, kind = "API" }) {
+  return { label, url, source, note, kind }
+}
+
+const libraryOfficialMeta = {
+  pandas: {
+    label: "pandas",
+    source: "pandas 官方文档",
+    guideUrl: "https://pandas.pydata.org/docs/reference/index.html",
+    guideNote: "适合查看 pandas API 总览、对象体系和版本对应的完整说明。",
+  },
+  numpy: {
+    label: "NumPy",
+    source: "NumPy 官方文档",
+    guideUrl: "https://numpy.org/doc/stable/reference/index.html",
+    guideNote: "适合查看数组、线性代数、随机数和数值计算相关的官方 API 目录。",
+  },
+  scipy: {
+    label: "SciPy",
+    source: "SciPy 官方文档",
+    guideUrl: "https://docs.scipy.org/doc/scipy/reference/index.html",
+    guideNote: "适合查看统计检验、插值、优化、信号处理和稀疏矩阵的官方说明。",
+  },
+  statsmodels: {
+    label: "statsmodels",
+    source: "statsmodels 官方文档",
+    guideUrl: "https://www.statsmodels.org/stable/api.html",
+    guideNote: "适合查看统计建模、时间序列和推断分析的完整 API 与示例。",
+  },
+  sklearn: {
+    label: "scikit-learn",
+    source: "scikit-learn 官方文档",
+    guideUrl: "https://scikit-learn.org/stable/modules/classes.html",
+    guideNote: "适合查看 estimator、pipeline、metrics 和 model_selection 的官方入口。",
+  },
+  keras: {
+    label: "Keras",
+    source: "Keras 官方文档",
+    guideUrl: "https://keras.io/api/",
+    guideNote: "适合查看模型、层、回调和训练 API 的完整层级说明。",
+  },
+  gensim: {
+    label: "gensim",
+    source: "Gensim 官方文档",
+    guideUrl: "https://radimrehurek.com/gensim/",
+    guideNote: "适合查看词典、主题模型、词向量和相似度模块的原始说明。",
+  },
+  seaborn: {
+    label: "seaborn",
+    source: "seaborn 官方文档",
+    guideUrl: "https://seaborn.pydata.org/api.html",
+    guideNote: "适合查看统计绘图 API、语义映射和 figure-level / axes-level 图表体系。",
+  },
+  matplotlib: {
+    label: "matplotlib",
+    source: "matplotlib 官方文档",
+    guideUrl: "https://matplotlib.org/stable/api/index.html",
+    guideNote: "适合查看 pyplot、Axes、Figure 和布局控制相关的官方 API 目录。",
+  },
+}
+
+function buildGuideReference(library) {
+  const meta = libraryOfficialMeta[library]
+  if (!meta) {
+    return null
+  }
+
+  return createOfficialRef({
+    label: `${meta.label} API 总览`,
+    url: meta.guideUrl,
+    source: meta.source,
+    note: meta.guideNote,
+    kind: "总览",
+  })
+}
+
+function uniqueRefs(items) {
+  const seen = new Set()
+  return items.filter((item) => {
+    if (!item?.url || seen.has(item.url)) {
+      return false
+    }
+    seen.add(item.url)
+    return true
+  })
+}
+
+function extractCallTokens(title) {
+  const matches = title.match(/([A-Za-z_]+(?:\.[A-Za-z_]+)?)\(\)/g) ?? []
+  return uniqueStrings(matches.map((token) => token.replace(/\(\)$/g, "")))
+}
+
+function pandasRef(path, label, note) {
+  return createOfficialRef({
+    label,
+    url: `https://pandas.pydata.org/docs/reference/api/${path}.html`,
+    source: libraryOfficialMeta.pandas.source,
+    note,
+  })
+}
+
+function numpyRef(path, label, note) {
+  return createOfficialRef({
+    label,
+    url: `https://numpy.org/doc/stable/reference/generated/numpy.${path}.html`,
+    source: libraryOfficialMeta.numpy.source,
+    note,
+  })
+}
+
+function scipyRef(path, label, note) {
+  return createOfficialRef({
+    label,
+    url: `https://docs.scipy.org/doc/scipy/reference/generated/scipy.${path}.html`,
+    source: libraryOfficialMeta.scipy.source,
+    note,
+  })
+}
+
+function seabornRef(path, label, note) {
+  return createOfficialRef({
+    label,
+    url: `https://seaborn.pydata.org/generated/seaborn.${path}.html`,
+    source: libraryOfficialMeta.seaborn.source,
+    note,
+  })
+}
+
+function pyplotRef(path, label, note) {
+  return createOfficialRef({
+    label,
+    url: `https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.${path}.html`,
+    source: libraryOfficialMeta.matplotlib.source,
+    note,
+  })
+}
+
+function axesRef(path, label, note) {
+  return createOfficialRef({
+    label,
+    url: `https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.${path}.html`,
+    source: libraryOfficialMeta.matplotlib.source,
+    note,
+  })
+}
+
+const pandasFunctionPaths = {
+  "pd-read-csv": [["pandas.read_csv", "read_csv()"]],
+  "pd-read-excel": [["pandas.read_excel", "read_excel()"]],
+  "pd-read-json": [["pandas.read_json", "read_json()"]],
+  "pd-read-parquet": [["pandas.read_parquet", "read_parquet()"]],
+  "pd-json-normalize": [["pandas.json_normalize", "json_normalize()"]],
+  "pd-pivot-table": [["pandas.pivot_table", "pivot_table()"]],
+  "pd-crosstab": [["pandas.crosstab", "crosstab()"]],
+  "pd-merge": [["pandas.merge", "merge()"]],
+  "pd-concat": [["pandas.concat", "concat()"]],
+  "pd-melt": [["pandas.melt", "melt()"]],
+  "pd-get-dummies": [["pandas.get_dummies", "get_dummies()"]],
+  "pd-to-datetime": [["pandas.to_datetime", "to_datetime()"]],
+  "pd-to-numeric": [["pandas.to_numeric", "to_numeric()"]],
+  "pd-cut-qcut": [
+    ["pandas.cut", "cut()"],
+    ["pandas.qcut", "qcut()"],
+  ],
+  "pd-merge-asof": [["pandas.merge_asof", "merge_asof()"]],
+  "pd-merge-ordered": [["pandas.merge_ordered", "merge_ordered()"]],
+  "pd-eval": [["pandas.eval", "eval()"]],
+  "pd-wide-to-long": [["pandas.wide_to_long", "wide_to_long()"]],
+}
+
+const pandasDataFramePaths = {
+  "pd-head": ["head", "tail"],
+  "pd-to-excel-csv": ["to_csv", "to_excel"],
+  "pd-info": ["info"],
+  "pd-describe": ["describe"],
+  "pd-isna-sum": ["isna"],
+  "pd-loc": ["loc"],
+  "pd-iloc": ["iloc"],
+  "pd-query": ["query"],
+  "pd-fillna": ["fillna", "dropna"],
+  "pd-drop-duplicates": ["drop_duplicates"],
+  "pd-astype": ["astype"],
+  "pd-rename": ["rename"],
+  "pd-replace": ["replace"],
+  "pd-assign": ["assign"],
+  "pd-apply": ["apply"],
+  "pd-nunique": ["nunique"],
+  "pd-set-reset-index": ["set_index", "reset_index"],
+  "pd-sort-values": ["sort_values"],
+  "pd-pivot": ["pivot"],
+  "pd-explode": ["explode"],
+  "pd-resample": ["resample"],
+  "pd-rolling": ["rolling"],
+  "pd-shift": ["shift"],
+  "pd-rank": ["rank"],
+  "pd-isin": ["isin"],
+  "pd-duplicated": ["duplicated"],
+  "pd-drop": ["drop"],
+  "pd-sample": ["sample"],
+  "pd-where-mask": ["where", "mask"],
+  "pd-clip-round": ["clip", "round"],
+  "pd-join": ["join"],
+  "pd-unstack-stack": ["stack", "unstack"],
+  "pd-pct-change-diff": ["pct_change", "diff"],
+  "pd-pipe": ["pipe"],
+  "pd-cumsum-cumcount": ["cumsum"],
+  "pd-interpolate": ["interpolate"],
+  "pd-reindex": ["reindex"],
+  "pd-insert": ["insert"],
+}
+
+const pandasSeriesPaths = {
+  "pd-map": ["map"],
+  "pd-value-counts": ["value_counts"],
+  "pd-str-contains": ["str.contains"],
+  "pd-str-extract": ["str.extract"],
+  "pd-between": ["between"],
+  "pd-notna": ["notna", "isna"],
+  "pd-str-strip-lower": ["str.strip", "str.lower"],
+}
+
+const pandasSearchLikeRefs = {
+  "pd-groupby-agg": [
+    pandasRef(
+      "pandas.DataFrame.groupby",
+      "DataFrame.groupby()",
+      "先理解 GroupBy 对象如何生成，再看 agg、transform、filter 的差异。"
+    ),
+  ],
+  "pd-groupby-transform": [
+    pandasRef(
+      "pandas.DataFrame.groupby",
+      "DataFrame.groupby()",
+      "transform 属于 GroupBy 结果上的常见延展操作，官方页会顺着 GroupBy 对象继续展开。"
+    ),
+  ],
+  "pd-groupby-filter": [
+    pandasRef(
+      "pandas.DataFrame.groupby",
+      "DataFrame.groupby()",
+      "filter 属于 GroupBy 结果上的筛组选项，建议从 groupby 官方页继续查看。"
+    ),
+  ],
+  "pd-dt-accessor": [
+    pandasRef(
+      "pandas.Series.dt",
+      "Series.dt",
+      "适合对照 DatetimeLike 访问器支持的方法、属性和返回类型。"
+    ),
+  ],
+}
+
+const sklearnPaths = {
+  "sk-train-test-split": ["model_selection.train_test_split", "train_test_split()"],
+  "sk-standardscaler": ["preprocessing.StandardScaler", "StandardScaler()"],
+  "sk-minmaxscaler": ["preprocessing.MinMaxScaler", "MinMaxScaler()"],
+  "sk-onehotencoder": ["preprocessing.OneHotEncoder", "OneHotEncoder()"],
+  "sk-simpleimputer": ["impute.SimpleImputer", "SimpleImputer()"],
+  "sk-columntransformer": ["compose.ColumnTransformer", "ColumnTransformer()"],
+  "sk-pipeline": ["pipeline.Pipeline", "Pipeline()"],
+  "sk-linear-regression": ["linear_model.LinearRegression", "LinearRegression()"],
+  "sk-logistic-regression": ["linear_model.LogisticRegression", "LogisticRegression()"],
+  "sk-random-forest": ["ensemble.RandomForestClassifier", "RandomForestClassifier()"],
+  "sk-kmeans": ["cluster.KMeans", "KMeans()"],
+  "sk-pca": ["decomposition.PCA", "PCA()"],
+  "sk-cross-val-score": ["model_selection.cross_val_score", "cross_val_score()"],
+  "sk-grid-search": ["model_selection.GridSearchCV", "GridSearchCV()"],
+  "sk-confusion-matrix": ["metrics.confusion_matrix", "confusion_matrix()"],
+  "sk-classification-report": ["metrics.classification_report", "classification_report()"],
+  "sk-roc-auc": ["metrics.roc_auc_score", "roc_auc_score()"],
+  "sk-silhouette-score": ["metrics.silhouette_score", "silhouette_score()"],
+}
+
+const statsmodelsRefs = {
+  "sm-add-constant": [
+    {
+      label: "add_constant()",
+      url: "https://www.statsmodels.org/stable/generated/statsmodels.tools.tools.add_constant.html",
+    },
+  ],
+  "sm-ols": [
+    {
+      label: "OLS()",
+      url: "https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.OLS.html",
+    },
+  ],
+  "sm-formula-ols": [
+    {
+      label: "smf.ols()",
+      url: "https://www.statsmodels.org/stable/generated/statsmodels.formula.api.ols.html",
+    },
+  ],
+  "sm-logit": [
+    {
+      label: "Logit()",
+      url: "https://www.statsmodels.org/stable/generated/statsmodels.discrete.discrete_model.Logit.html",
+    },
+  ],
+  "sm-summary": [
+    {
+      label: "RegressionResults.summary()",
+      url: "https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.RegressionResults.summary.html",
+    },
+  ],
+  "sm-anova-lm": [
+    {
+      label: "anova_lm()",
+      url: "https://www.statsmodels.org/stable/generated/statsmodels.stats.anova.anova_lm.html",
+    },
+  ],
+  "sm-descrstats": [
+    {
+      label: "DescrStatsW()",
+      url: "https://www.statsmodels.org/stable/generated/statsmodels.stats.weightstats.DescrStatsW.html",
+    },
+  ],
+  "sm-acf-pacf": [
+    {
+      label: "acf()",
+      url: "https://www.statsmodels.org/stable/generated/statsmodels.tsa.stattools.acf.html",
+    },
+    {
+      label: "pacf()",
+      url: "https://www.statsmodels.org/stable/generated/statsmodels.tsa.stattools.pacf.html",
+    },
+  ],
+  "sm-seasonal-decompose": [
+    {
+      label: "seasonal_decompose()",
+      url: "https://www.statsmodels.org/stable/generated/statsmodels.tsa.seasonal.seasonal_decompose.html",
+    },
+  ],
+  "sm-arima": [
+    {
+      label: "ARIMA()",
+      url: "https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima.model.ARIMA.html",
+    },
+  ],
+  "sm-qqplot": [
+    {
+      label: "qqplot()",
+      url: "https://www.statsmodels.org/stable/generated/statsmodels.graphics.gofplots.qqplot.html",
+    },
+  ],
+}
+
+const kerasRefs = {
+  "keras-sequential": [
+    { label: "Sequential", url: "https://keras.io/api/models/sequential/" },
+  ],
+  "keras-dense": [
+    { label: "Dense", url: "https://keras.io/api/layers/core_layers/dense/" },
+  ],
+  "keras-dropout": [
+    { label: "Dropout", url: "https://keras.io/api/layers/regularization_layers/dropout/" },
+  ],
+  "keras-compile": [
+    { label: "Model.compile", url: "https://keras.io/api/models/model_training_apis/" },
+  ],
+  "keras-fit": [
+    { label: "Model.fit", url: "https://keras.io/api/models/model_training_apis/" },
+  ],
+  "keras-evaluate": [
+    { label: "Model.evaluate", url: "https://keras.io/api/models/model_training_apis/" },
+  ],
+  "keras-predict": [
+    { label: "Model.predict", url: "https://keras.io/api/models/model_training_apis/" },
+  ],
+  "keras-earlystopping": [
+    { label: "EarlyStopping", url: "https://keras.io/api/callbacks/early_stopping/" },
+  ],
+  "keras-modelcheckpoint": [
+    { label: "ModelCheckpoint", url: "https://keras.io/api/callbacks/model_checkpoint/" },
+  ],
+  "keras-conv2d": [
+    { label: "Conv2D", url: "https://keras.io/api/layers/convolution_layers/convolution2d/" },
+  ],
+  "keras-embedding": [
+    { label: "Embedding", url: "https://keras.io/api/layers/core_layers/embedding/" },
+  ],
+  "keras-lstm": [
+    { label: "LSTM", url: "https://keras.io/api/layers/recurrent_layers/lstm/" },
+  ],
+}
+
+const gensimRefs = {
+  "gen-dictionary": [
+    { label: "Dictionary", url: "https://radimrehurek.com/gensim/corpora/dictionary.html" },
+  ],
+  "gen-doc2bow": [
+    { label: "doc2bow()", url: "https://radimrehurek.com/gensim/corpora/dictionary.html" },
+  ],
+  "gen-tfidfmodel": [
+    { label: "TfidfModel", url: "https://radimrehurek.com/gensim/models/tfidfmodel.html" },
+  ],
+  "gen-ldamodel": [
+    { label: "LdaModel", url: "https://radimrehurek.com/gensim/models/ldamodel.html" },
+  ],
+  "gen-ldamodel-print-topics": [
+    { label: "print_topics()", url: "https://radimrehurek.com/gensim/models/ldamodel.html" },
+  ],
+  "gen-word2vec": [
+    { label: "Word2Vec", url: "https://radimrehurek.com/gensim/models/word2vec.html" },
+  ],
+  "gen-keyedvectors-most-similar": [
+    { label: "KeyedVectors.most_similar()", url: "https://radimrehurek.com/gensim/models/keyedvectors.html" },
+  ],
+  "gen-similarities-matrixsimilarity": [
+    { label: "MatrixSimilarity", url: "https://radimrehurek.com/gensim/similarities/docsim.html" },
+  ],
+  "gen-phrases": [
+    { label: "Phrases", url: "https://radimrehurek.com/gensim/models/phrases.html" },
+  ],
+}
+
+function buildPandasOfficialReferences(command) {
+  if (pandasSearchLikeRefs[command.id]) {
+    return uniqueRefs(pandasSearchLikeRefs[command.id])
+  }
+
+  if (pandasFunctionPaths[command.id]) {
+    return uniqueRefs(
+      pandasFunctionPaths[command.id].map(([path, label]) =>
+        pandasRef(path, label, "适合直接对照官方参数、返回值和示例。")
+      )
+    )
+  }
+
+  if (pandasDataFramePaths[command.id]) {
+    return uniqueRefs(
+      pandasDataFramePaths[command.id].map((name) =>
+        pandasRef(
+          `pandas.DataFrame.${name}`,
+          `${name}()`,
+          "适合查看 DataFrame 对象上的完整参数、返回对象和使用限制。"
+        )
+      )
+    )
+  }
+
+  if (pandasSeriesPaths[command.id]) {
+    return uniqueRefs(
+      pandasSeriesPaths[command.id].map((name) =>
+        pandasRef(
+          `pandas.Series.${name}`,
+          `${name}()`,
+          "适合查看 Series 或访问器相关 API 的完整参数说明。"
+        )
+      )
+    )
+  }
+
+  return []
+}
+
+function buildNumpyOfficialReferences(command) {
+  if (command.id === "np-boolean-mask") {
+    return [
+      createOfficialRef({
+        label: "NumPy 布尔索引",
+        url: "https://numpy.org/doc/stable/user/basics.indexing.html",
+        source: libraryOfficialMeta.numpy.source,
+        note: "适合查看切片、花式索引与布尔掩码在官方文档中的统一说明。",
+      }),
+    ]
+  }
+
+  const tokens = extractCallTokens(command.title).map((token) => token.replace(/^np\./, ""))
+  if (!tokens.length) {
+    return []
+  }
+
+  return uniqueRefs(
+    tokens.map((token) =>
+      numpyRef(token, `numpy.${token}()`, "适合查看官方数组 API 的完整参数、广播规则和返回类型。")
+    )
+  )
+}
+
+function buildScipyOfficialReferences(command) {
+  const tokens = extractCallTokens(command.title)
+  if (!tokens.length) {
+    return []
+  }
+
+  return uniqueRefs(
+    tokens.map((token) => {
+      const normalized =
+        token.startsWith("distance.") || token === "squareform"
+          ? `spatial.${token}`
+          : token
+      return scipyRef(
+        normalized,
+        `scipy.${normalized}()`,
+        "适合查看 SciPy 模块级函数的完整参数、返回值和数学定义。"
+      )
+    })
+  )
+}
+
+function buildSeabornOfficialReferences(command) {
+  const tokens = extractCallTokens(command.title).map((token) => token.replace(/^sns\./, ""))
+  if (!tokens.length) {
+    return []
+  }
+
+  return uniqueRefs(
+    tokens.map((token) =>
+      seabornRef(
+        token,
+        `seaborn.${token}()`,
+        "适合查看语义映射、统计聚合和 figure-level / axes-level 差异。"
+      )
+    )
+  )
+}
+
+function buildMatplotlibOfficialReferences(command) {
+  const tokens = extractCallTokens(command.title).map((token) => token.replace(/^plt\./, ""))
+  if (!tokens.length) {
+    return []
+  }
+
+  return uniqueRefs(
+    tokens.map((token) => {
+      if (token.startsWith("secondary_")) {
+        return axesRef(
+          token,
+          `Axes.${token}()`,
+          "适合查看坐标轴级别的完整参数、返回对象和配套方法。"
+        )
+      }
+
+      return pyplotRef(
+        token,
+        `plt.${token}()`,
+        "适合查看 pyplot 风格 API 的完整参数、Artist 返回值和布局说明。"
+      )
+    })
+  )
+}
+
+function buildSklearnOfficialReferences(command) {
+  const entry = sklearnPaths[command.id]
+  if (!entry) {
+    return []
+  }
+
+  return [
+    createOfficialRef({
+      label: entry[1],
+      url: `https://scikit-learn.org/stable/modules/generated/sklearn.${entry[0]}.html`,
+      source: libraryOfficialMeta.sklearn.source,
+      note: "适合查看 estimator / transformer 的完整参数、属性和示例。",
+    }),
+  ]
+}
+
+function buildStatsmodelsOfficialReferences(command) {
+  const refs = statsmodelsRefs[command.id] ?? []
+  return refs.map((item) =>
+    createOfficialRef({
+      label: item.label,
+      url: item.url,
+      source: libraryOfficialMeta.statsmodels.source,
+      note: "适合对照统计模型、结果对象和检验输出的原始定义。",
+    })
+  )
+}
+
+function buildKerasOfficialReferences(command) {
+  const refs = kerasRefs[command.id] ?? []
+  return refs.map((item) =>
+    createOfficialRef({
+      label: item.label,
+      url: item.url,
+      source: libraryOfficialMeta.keras.source,
+      note: "适合查看层、模型和训练 API 的完整参数与返回对象说明。",
+    })
+  )
+}
+
+function buildGensimOfficialReferences(command) {
+  const refs = gensimRefs[command.id] ?? []
+  return refs.map((item) =>
+    createOfficialRef({
+      label: item.label,
+      url: item.url,
+      source: libraryOfficialMeta.gensim.source,
+      note: "适合查看文本建模对象、训练参数和底层表示结构。",
+    })
+  )
+}
+
+function buildOfficialReferences(command) {
+  const guide = buildGuideReference(command.library)
+  let refs = []
+
+  switch (command.library) {
+    case "pandas":
+      refs = buildPandasOfficialReferences(command)
+      break
+    case "numpy":
+      refs = buildNumpyOfficialReferences(command)
+      break
+    case "scipy":
+      refs = buildScipyOfficialReferences(command)
+      break
+    case "statsmodels":
+      refs = buildStatsmodelsOfficialReferences(command)
+      break
+    case "sklearn":
+      refs = buildSklearnOfficialReferences(command)
+      break
+    case "keras":
+      refs = buildKerasOfficialReferences(command)
+      break
+    case "gensim":
+      refs = buildGensimOfficialReferences(command)
+      break
+    case "seaborn":
+      refs = buildSeabornOfficialReferences(command)
+      break
+    case "matplotlib":
+      refs = buildMatplotlibOfficialReferences(command)
+      break
+    default:
+      refs = []
+  }
+
+  return uniqueRefs([guide, ...refs].filter(Boolean))
+}
+
 const parameterCatalog = {
   filepath_or_buffer: createParamDoc(
     "filepath_or_buffer",
@@ -4004,6 +4637,25 @@ function buildCommandRecord(command) {
     ...command,
   }
 
+  const parameters =
+    normalized.parameters && normalized.parameters.length
+      ? normalized.parameters.map(normalizeParamDoc)
+      : buildParameterDocs(normalized).map(normalizeParamDoc)
+
+  const examples =
+    normalized.examples && normalized.examples.length
+      ? normalized.examples.map((example, index) =>
+          normalizeExampleCard(example, `示例 ${index + 1}`)
+        )
+      : buildExamples(normalized).map((example, index) =>
+          normalizeExampleCard(example, `示例 ${index + 1}`)
+        )
+
+  const officialReferences =
+    normalized.officialReferences && normalized.officialReferences.length
+      ? uniqueRefs(normalized.officialReferences)
+      : buildOfficialReferences(normalized)
+
   return {
     ...normalized,
     recommendedUse:
@@ -4012,18 +4664,10 @@ function buildCommandRecord(command) {
         : buildRecommendedUse(normalized),
     professionalDetail:
       normalized.professionalDetail || buildProfessionalDetail(normalized),
-    parameters:
-      normalized.parameters && normalized.parameters.length
-        ? normalized.parameters.map(normalizeParamDoc)
-        : buildParameterDocs(normalized).map(normalizeParamDoc),
-    examples:
-      normalized.examples && normalized.examples.length
-        ? normalized.examples.map((example, index) =>
-            normalizeExampleCard(example, `示例 ${index + 1}`)
-          )
-        : buildExamples(normalized).map((example, index) =>
-            normalizeExampleCard(example, `示例 ${index + 1}`)
-          ),
+    parameters,
+    learningParameters: parameters,
+    examples,
+    officialReferences,
     visualDemo:
       Object.prototype.hasOwnProperty.call(normalized, "visualDemo")
         ? normalized.visualDemo

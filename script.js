@@ -14,6 +14,9 @@ const indexedCommands = commands.map((command) => ({
     command.professionalDetail,
     command.parameters.map((item) => `${item.name} ${item.meaning} ${item.detail}`).join(" "),
     command.examples.map((item) => `${item.title} ${item.note} ${item.code}`).join(" "),
+    (command.officialReferences ?? [])
+      .map((item) => `${item.label} ${item.note} ${item.source}`)
+      .join(" "),
     command.visualDemo?.title ?? "",
     command.visualDemo?.note ?? "",
   ]
@@ -838,6 +841,42 @@ function renderVisualDemo(command) {
   `
 }
 
+function renderOfficialReferences(command) {
+  if (!command.officialReferences?.length) {
+    return ""
+  }
+
+  const cards = command.officialReferences
+    .map(
+      (item) => `
+        <a
+          class="official-ref-card"
+          href="${escapeHtml(item.url)}"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <div class="official-ref-top">
+            <span class="official-ref-source">${escapeHtml(item.source)}</span>
+            <span class="official-ref-kind">${escapeHtml(item.kind || "API")}</span>
+          </div>
+          <h5>${escapeHtml(item.label)}</h5>
+          <p>${escapeHtml(item.note)}</p>
+        </a>
+      `
+    )
+    .join("")
+
+  return `
+    <section class="detail-section">
+      <h4>官方参考</h4>
+      <p class="detail-section-note">
+        这里给你的是当前命令对应的官方入口。完整参数、返回值、边界条件和版本差异，建议以上方原始文档为准。
+      </p>
+      <div class="official-ref-grid">${cards}</div>
+    </section>
+  `
+}
+
 function getCommandById(id) {
   return commandMap.get(id) ?? null
 }
@@ -1166,7 +1205,7 @@ function renderDetail() {
     refs.copyCodeButton.disabled = true
     refs.detailView.innerHTML = `
       <div class="placeholder">
-        <p>左侧筛选、中间结果或场景步骤都可以驱动这里的详情、参数说明和示例卡片。</p>
+        <p>左侧筛选、中间结果或场景步骤都可以驱动这里的详情、官方参考、学习参数和示例代码。</p>
       </div>
     `
     return
@@ -1234,6 +1273,7 @@ function renderDetail() {
     )
     .join("")
 
+  const officialReferencesMarkup = renderOfficialReferences(command)
   const visualDemoMarkup = renderVisualDemo(command)
 
   refs.copyCodeButton.disabled = false
@@ -1250,11 +1290,15 @@ function renderDetail() {
       <div class="detail-kpis">
         <article class="detail-kpi">
           <span class="detail-kpi-value">${command.parameters.length}</span>
-          <span class="detail-kpi-label">核心参数</span>
+          <span class="detail-kpi-label">优先参数</span>
         </article>
         <article class="detail-kpi">
           <span class="detail-kpi-value">${command.examples.length}</span>
           <span class="detail-kpi-label">使用示例</span>
+        </article>
+        <article class="detail-kpi">
+          <span class="detail-kpi-value">${command.officialReferences?.length ?? 0}</span>
+          <span class="detail-kpi-label">官方入口</span>
         </article>
         <article class="detail-kpi">
           <span class="detail-kpi-value">${command.related.length}</span>
@@ -1273,25 +1317,30 @@ function renderDetail() {
       <p class="detail-copy">${escapeHtml(command.professionalDetail)}</p>
     </section>
 
+    ${officialReferencesMarkup}
+
     <section class="detail-section">
-      <h4>常用写法</h4>
+      <h4>基本用法</h4>
       <pre class="syntax-block"><code>${escapeHtml(command.syntax)}</code></pre>
     </section>
 
     <section class="detail-section">
-      <h4>参数说明</h4>
+      <h4>学习优先参数</h4>
+      <p class="detail-section-note">
+        这里优先解释最常用、最适合入门理解的参数。想看完整参数列表、默认值和返回对象，请继续参考上方官方入口。
+      </p>
       <div class="parameter-list">${parameterMarkup}</div>
     </section>
 
     ${visualDemoMarkup}
 
     <section class="detail-section">
-      <h4>多示例</h4>
+      <h4>示例代码</h4>
       <div class="example-list">${exampleMarkup}</div>
     </section>
 
     <section class="detail-section">
-      <h4>使用提示</h4>
+      <h4>注意事项</h4>
       <ul class="detail-list">${tipItems}</ul>
     </section>
 
