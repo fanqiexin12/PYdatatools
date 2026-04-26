@@ -3,6 +3,10 @@ const libraryMeta = {
   pandas: { label: "pandas", note: "表格处理" },
   numpy: { label: "numpy", note: "数值计算" },
   scipy: { label: "scipy", note: "科学计算" },
+  statsmodels: { label: "statsmodels", note: "统计建模" },
+  sklearn: { label: "scikit-learn", note: "机器学习" },
+  keras: { label: "keras", note: "深度学习" },
+  gensim: { label: "gensim", note: "文本主题" },
   seaborn: { label: "seaborn", note: "统计绘图" },
   matplotlib: { label: "matplotlib", note: "基础绘图" },
 }
@@ -22,6 +26,9 @@ const categoryMeta = {
   stats: { label: "统计推断" },
   optimize: { label: "优化求解" },
   signal: { label: "信号处理" },
+  model: { label: "建模训练" },
+  evaluate: { label: "结果评估" },
+  text: { label: "文本挖掘" },
   plot: { label: "绘图展示" },
 }
 
@@ -36,6 +43,10 @@ const quickFilters = [
   { label: "统计检验", library: "scipy", category: "stats", search: "" },
   { label: "优化求解", library: "scipy", category: "optimize", search: "" },
   { label: "信号平滑", library: "scipy", category: "signal", search: "filter" },
+  { label: "统计建模", library: "statsmodels", category: "model", search: "" },
+  { label: "机器学习", library: "sklearn", category: "model", search: "" },
+  { label: "深度学习", library: "keras", category: "model", search: "" },
+  { label: "主题模型", library: "gensim", category: "text", search: "" },
   { label: "统计图", library: "seaborn", category: "plot", search: "" },
   { label: "基础绘图", library: "matplotlib", category: "plot", search: "" },
 ]
@@ -193,6 +204,94 @@ const scenarios = [
       "先做标准化和分布检查，再进入显著性检验与拟合。",
       "平滑和插值适合连续序列，但不要掩盖真实异常点。",
       "把 scipy 的结果接到 seaborn 或 matplotlib 图上，最适合做讲解型分析。",
+    ],
+  },
+  {
+    id: "scenario-statsmodels",
+    title: "回归、分解与时间序列统计建模",
+    summary: "从描述统计、设计矩阵，到 OLS / ANOVA / ARIMA / 季节分解的一条常见统计建模链路。",
+    library: "statsmodels",
+    category: "model",
+    search: "",
+    leadId: "sm-add-constant",
+    steps: [
+      "sm-add-constant",
+      "sm-ols",
+      "sm-summary",
+      "sm-anova-lm",
+      "sm-seasonal-decompose",
+      "sm-arima",
+    ],
+    highlights: [
+      "先明确自变量和设计矩阵，再进入回归估计和显著性解释。",
+      "时间序列建模前尽量先看季节性和自相关结构。",
+      "statsmodels 最强的是结果解释层，而不只是拟合本身。",
+    ],
+  },
+  {
+    id: "scenario-ml",
+    title: "机器学习训练与评估",
+    summary: "从切分数据、特征缩放、流水线建模，到交叉验证和分类评估的标准流程。",
+    library: "sklearn",
+    category: "model",
+    search: "",
+    leadId: "sk-train-test-split",
+    steps: [
+      "sk-train-test-split",
+      "sk-standardscaler",
+      "sk-pipeline",
+      "sk-logistic-regression",
+      "sk-cross-val-score",
+      "sk-confusion-matrix",
+    ],
+    highlights: [
+      "先切分训练/测试，再做缩放和流水线，能减少数据泄漏。",
+      "模型评估不要只看 accuracy，最好连 confusion matrix 一起看。",
+      "交叉验证适合在模型选择阶段帮助你更稳地比较方案。",
+    ],
+  },
+  {
+    id: "scenario-deep",
+    title: "Keras 神经网络训练流程",
+    summary: "从搭 Sequential 网络、编译、训练，到回调、评估和预测的一条常见深度学习入口流程。",
+    library: "keras",
+    category: "model",
+    search: "",
+    leadId: "keras-sequential",
+    steps: [
+      "keras-sequential",
+      "keras-dense",
+      "keras-compile",
+      "keras-fit",
+      "keras-earlystopping",
+      "keras-evaluate",
+    ],
+    highlights: [
+      "模型结构、损失函数和优化器通常决定了训练行为的上限。",
+      "回调能帮你减少过拟合和长时间无效训练。",
+      "深度学习命令最好和输入张量形状一起理解。",
+    ],
+  },
+  {
+    id: "scenario-text",
+    title: "文本向量化与主题建模",
+    summary: "从词典、词袋、TF-IDF，到 LDA 主题模型和词向量检索的一条常见文本挖掘流程。",
+    library: "gensim",
+    category: "text",
+    search: "",
+    leadId: "gen-dictionary",
+    steps: [
+      "gen-dictionary",
+      "gen-doc2bow",
+      "gen-tfidfmodel",
+      "gen-ldamodel",
+      "gen-ldamodel-print-topics",
+      "gen-word2vec",
+    ],
+    highlights: [
+      "先把文本切词和清洗做好，再做词袋或主题模型。",
+      "LDA 适合主题结构理解，Word2Vec 更适合词语相似性和语义邻近。",
+      "文本库的结果最好配合示意结构来理解，而不是只看函数名。",
     ],
   },
 ]
@@ -3906,5 +4005,962 @@ probs = special.expit(logits)
 print(probs.round(4))`,
     keywords: ["expit", "sigmoid", "概率映射", "logistic"],
     related: ["np-log-sqrt", "np-isclose-allclose", "sp-optimize-minimize"],
+  }),
+  createCommand({
+    id: "sm-add-constant",
+    library: "statsmodels",
+    category: "model",
+    title: "sm.add_constant()",
+    alias: "给设计矩阵加常数项",
+    summary: "在线性回归等模型里手动加入截距列，是使用矩阵接口建模时的高频起点。",
+    syntax: 'sm.add_constant(df[["ad_cost", "visits"]])',
+    code: `import pandas as pd
+import statsmodels.api as sm
+
+df = pd.DataFrame({
+    "sales": [120, 138, 146, 160, 174],
+    "ad_cost": [20, 22, 25, 26, 29],
+    "visits": [400, 430, 460, 500, 530],
+})
+
+X = sm.add_constant(df[["ad_cost", "visits"]])
+print(X.head())`,
+    keywords: ["add_constant", "截距项", "设计矩阵", "exog"],
+    related: ["sm-ols", "sm-formula-ols", "sk-columntransformer"],
+  }),
+  createCommand({
+    id: "sm-ols",
+    library: "statsmodels",
+    category: "model",
+    title: "sm.OLS().fit()",
+    alias: "线性回归拟合",
+    summary: "适合做可解释线性建模，重点是系数、显著性和拟合质量的统计解释。",
+    syntax: "sm.OLS(y, X).fit()",
+    code: `import pandas as pd
+import statsmodels.api as sm
+
+df = pd.DataFrame({
+    "sales": [120, 138, 146, 160, 174],
+    "ad_cost": [20, 22, 25, 26, 29],
+    "visits": [400, 430, 460, 500, 530],
+})
+
+X = sm.add_constant(df[["ad_cost", "visits"]])
+y = df["sales"]
+model = sm.OLS(y, X).fit()
+
+print(model.params)`,
+    keywords: ["OLS", "线性回归", "回归系数", "statsmodels regression"],
+    related: ["sm-add-constant", "sm-summary", "sm-anova-lm"],
+  }),
+  createCommand({
+    id: "sm-formula-ols",
+    library: "statsmodels",
+    category: "model",
+    title: "smf.ols().fit()",
+    alias: "用公式接口拟合线性回归",
+    summary: "适合直接用 DataFrame 列名建模，尤其在分类变量和交互项较多时更易读。",
+    syntax: 'smf.ols("sales ~ ad_cost + C(channel)", data=df).fit()',
+    code: `import pandas as pd
+import statsmodels.formula.api as smf
+
+df = pd.DataFrame({
+    "sales": [120, 138, 146, 160, 174, 182],
+    "ad_cost": [20, 22, 25, 26, 29, 31],
+    "channel": ["Online", "Online", "Store", "Store", "Online", "Store"],
+})
+
+model = smf.ols("sales ~ ad_cost + C(channel)", data=df).fit()
+print(model.params)`,
+    keywords: ["formula", "smf.ols", "C(channel)", "公式回归"],
+    related: ["sm-ols", "sm-anova-lm", "sm-summary"],
+  }),
+  createCommand({
+    id: "sm-logit",
+    library: "statsmodels",
+    category: "model",
+    title: "sm.Logit().fit()",
+    alias: "逻辑回归拟合",
+    summary: "适合需要系数显著性和统计解释的二分类建模场景。",
+    syntax: "sm.Logit(y, X).fit()",
+    code: `import pandas as pd
+import statsmodels.api as sm
+
+df = pd.DataFrame({
+    "converted": [0, 0, 0, 1, 1, 1],
+    "ad_cost": [20, 22, 25, 28, 30, 35],
+    "visits": [300, 320, 340, 420, 450, 480],
+})
+
+X = sm.add_constant(df[["ad_cost", "visits"]])
+y = df["converted"]
+model = sm.Logit(y, X).fit(disp=False)
+
+print(model.params)`,
+    keywords: ["Logit", "逻辑回归", "二分类", "显著性"],
+    related: ["sm-summary", "sk-logistic-regression", "sm-add-constant"],
+  }),
+  createCommand({
+    id: "sm-summary",
+    library: "statsmodels",
+    category: "evaluate",
+    title: "summary()",
+    alias: "查看模型摘要报告",
+    summary: "把系数、标准误、p 值、R-squared 等统计信息集中打印出来，是 statsmodels 的核心亮点。",
+    syntax: "model.summary()",
+    code: `summary_text = model.summary()
+print(summary_text)`,
+    keywords: ["summary", "模型摘要", "p value", "r-squared"],
+    related: ["sm-ols", "sm-formula-ols", "sm-logit"],
+  }),
+  createCommand({
+    id: "sm-anova-lm",
+    library: "statsmodels",
+    category: "stats",
+    title: "sm.stats.anova_lm()",
+    alias: "方差分析表",
+    summary: "适合在线性模型拟合后拆解各因素的解释贡献和显著性。",
+    syntax: "sm.stats.anova_lm(model, typ=2)",
+    code: `import statsmodels.api as sm
+
+anova_table = sm.stats.anova_lm(model, typ=2)
+print(anova_table)`,
+    keywords: ["anova_lm", "方差分析", "typ=2", "因素显著性"],
+    related: ["sm-formula-ols", "sm-summary", "sp-stats-f-oneway"],
+  }),
+  createCommand({
+    id: "sm-descrstats",
+    library: "statsmodels",
+    category: "stats",
+    title: "DescrStatsW()",
+    alias: "描述统计与置信区间",
+    summary: "适合在建模前快速查看均值、标准差和均值置信区间。",
+    syntax: "DescrStatsW(values)",
+    code: `import numpy as np
+from statsmodels.stats.weightstats import DescrStatsW
+
+values = np.array([120, 138, 146, 160, 174], dtype=float)
+stats = DescrStatsW(values)
+
+print(stats.mean, stats.std, stats.tconfint_mean())`,
+    keywords: ["DescrStatsW", "描述统计", "置信区间", "均值"],
+    related: ["sm-summary", "sp-stats-zscore", "pd-describe"],
+  }),
+  createCommand({
+    id: "sm-acf-pacf",
+    library: "statsmodels",
+    category: "time",
+    title: "acf() / pacf()",
+    alias: "查看自相关和偏自相关",
+    summary: "适合时间序列建模前判断序列记忆长度和 AR/MA 阶数线索。",
+    syntax: "acf(series, nlags=8)",
+    code: `import numpy as np
+from statsmodels.tsa.stattools import acf, pacf
+
+series = np.array([12, 13, 15, 18, 17, 19, 21, 20, 22, 24], dtype=float)
+
+print(acf(series, nlags=4))
+print(pacf(series, nlags=4))`,
+    keywords: ["acf", "pacf", "自相关", "偏自相关", "lag"],
+    related: ["sm-arima", "sm-seasonal-decompose", "pd-rolling"],
+  }),
+  createCommand({
+    id: "sm-seasonal-decompose",
+    library: "statsmodels",
+    category: "time",
+    title: "seasonal_decompose()",
+    alias: "时间序列季节分解",
+    summary: "适合把时间序列拆成趋势、季节项和残差，先理解结构再谈预测。",
+    syntax: 'seasonal_decompose(series, model="additive", period=4)',
+    code: `import pandas as pd
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+index = pd.date_range("2026-01-01", periods=12, freq="M")
+series = pd.Series([10, 12, 11, 15, 18, 17, 20, 23, 21, 25, 27, 26], index=index)
+
+result = seasonal_decompose(series, model="additive", period=4)
+print(result.trend.dropna().head())`,
+    keywords: ["seasonal_decompose", "季节分解", "trend seasonal resid", "time series"],
+    related: ["sm-acf-pacf", "sm-arima", "pd-resample"],
+  }),
+  createCommand({
+    id: "sm-arima",
+    library: "statsmodels",
+    category: "time",
+    title: "ARIMA().fit()",
+    alias: "ARIMA 时间序列建模",
+    summary: "适合做单变量时间序列预测，前提是先理解差分、阶数和残差结构。",
+    syntax: "ARIMA(series, order=(1, 1, 1)).fit()",
+    code: `import pandas as pd
+from statsmodels.tsa.arima.model import ARIMA
+
+series = pd.Series([120, 124, 128, 130, 133, 137, 141, 144, 149, 153], dtype=float)
+model = ARIMA(series, order=(1, 1, 1)).fit()
+
+print(model.forecast(3))`,
+    keywords: ["ARIMA", "时间序列预测", "order", "forecast"],
+    related: ["sm-acf-pacf", "sm-seasonal-decompose", "pd-shift"],
+  }),
+  createCommand({
+    id: "sm-qqplot",
+    library: "statsmodels",
+    category: "plot",
+    title: "sm.qqplot()",
+    alias: "Q-Q 图",
+    summary: "适合检查样本分布是否近似理论正态分布，是回归诊断和分布检查的常用图。",
+    syntax: "sm.qqplot(values, line='45')",
+    code: `import numpy as np
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+
+values = np.array([12, 14, 15, 16, 18, 20, 22], dtype=float)
+sm.qqplot(values, line="45")
+plt.tight_layout()
+plt.show()`,
+    keywords: ["qqplot", "Q-Q 图", "正态诊断", "distribution check"],
+    related: ["sm-summary", "sp-stats-shapiro", "sns-histplot"],
+  }),
+  createCommand({
+    id: "sk-train-test-split",
+    library: "sklearn",
+    category: "model",
+    title: "train_test_split()",
+    alias: "切分训练集和测试集",
+    summary: "监督学习流程的第一步之一，用来隔离训练和评估阶段，减少数据泄漏。",
+    syntax: "train_test_split(X, y, test_size=0.2, random_state=42)",
+    code: `import numpy as np
+from sklearn.model_selection import train_test_split
+
+X = np.array([[1, 20], [2, 22], [3, 25], [4, 28], [5, 30], [6, 35]], dtype=float)
+y = np.array([0, 0, 0, 1, 1, 1])
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.33,
+    random_state=42
+)`,
+    keywords: ["train_test_split", "训练测试切分", "data leakage", "model selection"],
+    related: ["sk-cross-val-score", "sk-standardscaler", "sk-pipeline"],
+  }),
+  createCommand({
+    id: "sk-standardscaler",
+    library: "sklearn",
+    category: "transform",
+    title: "StandardScaler()",
+    alias: "标准化特征",
+    summary: "把特征缩放到均值 0、方差 1 的尺度，适合线性模型、SVM、神经网络等对尺度敏感的算法。",
+    syntax: "StandardScaler().fit_transform(X)",
+    code: `import numpy as np
+from sklearn.preprocessing import StandardScaler
+
+X = np.array([[1.0, 20.0], [2.0, 22.0], [3.0, 25.0], [4.0, 28.0]])
+scaled = StandardScaler().fit_transform(X)
+
+print(scaled)`,
+    keywords: ["StandardScaler", "标准化", "scaling", "feature scaling"],
+    related: ["sk-minmaxscaler", "sk-pipeline", "sk-logistic-regression"],
+  }),
+  createCommand({
+    id: "sk-minmaxscaler",
+    library: "sklearn",
+    category: "transform",
+    title: "MinMaxScaler()",
+    alias: "把特征缩放到固定区间",
+    summary: "适合需要把特征映射到 0 到 1 或其它固定区间的场景。",
+    syntax: "MinMaxScaler().fit_transform(X)",
+    code: `import numpy as np
+from sklearn.preprocessing import MinMaxScaler
+
+X = np.array([[1.0, 20.0], [2.0, 22.0], [3.0, 25.0], [4.0, 28.0]])
+scaled = MinMaxScaler().fit_transform(X)
+
+print(scaled)`,
+    keywords: ["MinMaxScaler", "归一化", "0-1", "feature scaling"],
+    related: ["sk-standardscaler", "sk-pipeline", "sk-pca"],
+  }),
+  createCommand({
+    id: "sk-onehotencoder",
+    library: "sklearn",
+    category: "transform",
+    title: "OneHotEncoder()",
+    alias: "类别特征独热编码",
+    summary: "把分类变量转成稀疏或稠密哑变量矩阵，适合传统机器学习模型输入。",
+    syntax: 'OneHotEncoder(handle_unknown="ignore")',
+    code: `from sklearn.preprocessing import OneHotEncoder
+
+X = [["Online"], ["Store"], ["Online"], ["Partner"]]
+encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+encoded = encoder.fit_transform(X)
+
+print(encoded)`,
+    keywords: ["OneHotEncoder", "独热编码", "分类特征", "categorical"],
+    related: ["sk-columntransformer", "sk-simpleimputer", "pd-get-dummies"],
+  }),
+  createCommand({
+    id: "sk-simpleimputer",
+    library: "sklearn",
+    category: "clean",
+    title: "SimpleImputer()",
+    alias: "简单缺失值填补",
+    summary: "适合把缺失值处理并纳入机器学习流水线，而不是在 DataFrame 外部手动补值。",
+    syntax: 'SimpleImputer(strategy="median")',
+    code: `import numpy as np
+from sklearn.impute import SimpleImputer
+
+X = np.array([[1.0, 20.0], [2.0, 22.0], [3.0, np.nan], [4.0, 28.0]])
+filled = SimpleImputer(strategy="median").fit_transform(X)
+
+print(filled)`,
+    keywords: ["SimpleImputer", "缺失值填补", "median", "imputation"],
+    related: ["sk-standardscaler", "sk-columntransformer", "pd-fillna"],
+  }),
+  createCommand({
+    id: "sk-columntransformer",
+    library: "sklearn",
+    category: "transform",
+    title: "ColumnTransformer()",
+    alias: "按列组合不同预处理器",
+    summary: "适合数值列和类别列并存时，为不同列应用不同预处理规则。",
+    syntax: "ColumnTransformer([...])",
+    code: `import pandas as pd
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+
+df = pd.DataFrame({
+    "sales": [120, 138, 146, 160],
+    "channel": ["Online", "Store", "Online", "Partner"],
+})
+
+preprocess = ColumnTransformer([
+    ("num", StandardScaler(), ["sales"]),
+    ("cat", OneHotEncoder(handle_unknown="ignore"), ["channel"]),
+])
+
+print(preprocess.fit_transform(df))`,
+    keywords: ["ColumnTransformer", "按列预处理", "mixed features", "pipeline"],
+    related: ["sk-onehotencoder", "sk-standardscaler", "sk-pipeline"],
+  }),
+  createCommand({
+    id: "sk-pipeline",
+    library: "sklearn",
+    category: "model",
+    title: "Pipeline()",
+    alias: "把预处理和模型串成流水线",
+    summary: "适合把缩放、编码、建模统一封装，减少数据泄漏并让验证更规范。",
+    syntax: "Pipeline([...])",
+    code: `import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+X = np.array([[1, 20], [2, 22], [3, 25], [4, 28], [5, 30], [6, 35]], dtype=float)
+y = np.array([0, 0, 0, 1, 1, 1])
+
+pipe = Pipeline([
+    ("scaler", StandardScaler()),
+    ("model", LogisticRegression()),
+])
+
+pipe.fit(X, y)`,
+    keywords: ["Pipeline", "流水线", "data leakage", "preprocess + model"],
+    related: ["sk-columntransformer", "sk-cross-val-score", "sk-grid-search"],
+  }),
+  createCommand({
+    id: "sk-linear-regression",
+    library: "sklearn",
+    category: "model",
+    title: "LinearRegression()",
+    alias: "线性回归模型",
+    summary: "适合做基线回归、趋势拟合和连续值预测的入门模型。",
+    syntax: "LinearRegression().fit(X_train, y_train)",
+    code: `import numpy as np
+from sklearn.linear_model import LinearRegression
+
+X = np.array([[1], [2], [3], [4], [5]], dtype=float)
+y = np.array([12, 14, 17, 19, 22], dtype=float)
+
+model = LinearRegression().fit(X, y)
+print(model.predict([[6.0]]))`,
+    keywords: ["LinearRegression", "回归模型", "predict continuous", "baseline"],
+    related: ["sk-pipeline", "sm-ols", "sk-pca"],
+  }),
+  createCommand({
+    id: "sk-logistic-regression",
+    library: "sklearn",
+    category: "model",
+    title: "LogisticRegression()",
+    alias: "逻辑回归分类模型",
+    summary: "适合二分类基线建模，配合标准化和阈值分析常常很稳。",
+    syntax: "LogisticRegression().fit(X_train, y_train)",
+    code: `import numpy as np
+from sklearn.linear_model import LogisticRegression
+
+X = np.array([[1, 20], [2, 22], [3, 25], [4, 28], [5, 30], [6, 35]], dtype=float)
+y = np.array([0, 0, 0, 1, 1, 1])
+
+model = LogisticRegression().fit(X, y)
+print(model.predict_proba(X[:2]))`,
+    keywords: ["LogisticRegression", "分类模型", "predict_proba", "binary classification"],
+    related: ["sk-standardscaler", "sk-confusion-matrix", "sm-logit"],
+  }),
+  createCommand({
+    id: "sk-random-forest",
+    library: "sklearn",
+    category: "model",
+    title: "RandomForestClassifier()",
+    alias: "随机森林分类器",
+    summary: "适合非线性分类任务，也常用来做特征重要性快速摸底。",
+    syntax: "RandomForestClassifier(n_estimators=200, random_state=42)",
+    code: `import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+
+X = np.array([[1, 20], [2, 22], [3, 25], [4, 28], [5, 30], [6, 35]], dtype=float)
+y = np.array([0, 0, 0, 1, 1, 1])
+
+model = RandomForestClassifier(n_estimators=200, random_state=42).fit(X, y)
+print(model.feature_importances_)`,
+    keywords: ["RandomForestClassifier", "随机森林", "feature importance", "tree ensemble"],
+    related: ["sk-grid-search", "sk-cross-val-score", "sk-logistic-regression"],
+  }),
+  createCommand({
+    id: "sk-kmeans",
+    library: "sklearn",
+    category: "model",
+    title: "KMeans()",
+    alias: "KMeans 聚类",
+    summary: "适合做无监督分群、客户分层或快速观察样本结构。",
+    syntax: "KMeans(n_clusters=3, random_state=42, n_init='auto')",
+    code: `import numpy as np
+from sklearn.cluster import KMeans
+
+X = np.array([[1, 20], [2, 22], [3, 25], [20, 80], [21, 82], [22, 84]], dtype=float)
+model = KMeans(n_clusters=2, random_state=42, n_init="auto").fit(X)
+
+print(model.labels_)`,
+    keywords: ["KMeans", "聚类", "clustering", "n_clusters"],
+    related: ["sk-silhouette-score", "sk-standardscaler", "plt-scatter"],
+  }),
+  createCommand({
+    id: "sk-pca",
+    library: "sklearn",
+    category: "transform",
+    title: "PCA()",
+    alias: "主成分分析降维",
+    summary: "适合压缩高维特征、可视化前降维或观察主要方差方向。",
+    syntax: "PCA(n_components=2).fit_transform(X)",
+    code: `import numpy as np
+from sklearn.decomposition import PCA
+
+X = np.array([
+    [1, 20, 300],
+    [2, 22, 320],
+    [3, 25, 340],
+    [4, 28, 360],
+], dtype=float)
+
+components = PCA(n_components=2).fit_transform(X)
+print(components)`,
+    keywords: ["PCA", "降维", "principal components", "explained variance"],
+    related: ["np-cov", "sk-standardscaler", "sk-kmeans"],
+  }),
+  createCommand({
+    id: "sk-cross-val-score",
+    library: "sklearn",
+    category: "evaluate",
+    title: "cross_val_score()",
+    alias: "交叉验证评分",
+    summary: "适合在模型比较阶段更稳地估计泛化表现，而不是只盯单次切分结果。",
+    syntax: "cross_val_score(model, X, y, cv=5)",
+    code: `import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score
+
+X = np.array([[1, 20], [2, 22], [3, 25], [4, 28], [5, 30], [6, 35]], dtype=float)
+y = np.array([0, 0, 0, 1, 1, 1])
+
+model = LogisticRegression()
+scores = cross_val_score(model, X, y, cv=3)
+print(scores)`,
+    keywords: ["cross_val_score", "交叉验证", "cv", "generalization"],
+    related: ["sk-train-test-split", "sk-pipeline", "sk-grid-search"],
+  }),
+  createCommand({
+    id: "sk-grid-search",
+    library: "sklearn",
+    category: "evaluate",
+    title: "GridSearchCV()",
+    alias: "网格搜索调参",
+    summary: "适合系统比较超参数组合，并结合交叉验证选择更稳的模型配置。",
+    syntax: "GridSearchCV(model, param_grid, cv=5)",
+    code: `import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
+
+X = np.array([[1, 20], [2, 22], [3, 25], [4, 28], [5, 30], [6, 35]], dtype=float)
+y = np.array([0, 0, 0, 1, 1, 1])
+
+search = GridSearchCV(
+    LogisticRegression(max_iter=1000),
+    {"C": [0.1, 1, 10]},
+    cv=3
+)
+search.fit(X, y)
+print(search.best_params_)`,
+    keywords: ["GridSearchCV", "调参", "param_grid", "best_params"],
+    related: ["sk-cross-val-score", "sk-pipeline", "sk-random-forest"],
+  }),
+  createCommand({
+    id: "sk-confusion-matrix",
+    library: "sklearn",
+    category: "evaluate",
+    title: "confusion_matrix()",
+    alias: "混淆矩阵",
+    summary: "适合查看分类模型把正负类错分到了哪里，而不只是看整体准确率。",
+    syntax: "confusion_matrix(y_true, y_pred)",
+    code: `import numpy as np
+from sklearn.metrics import confusion_matrix
+
+y_true = np.array([0, 0, 1, 1, 1])
+y_pred = np.array([0, 1, 1, 1, 0])
+
+print(confusion_matrix(y_true, y_pred))`,
+    keywords: ["confusion_matrix", "混淆矩阵", "TP FP FN TN", "classification"],
+    related: ["sk-classification-report", "sk-roc-auc", "sns-heatmap"],
+  }),
+  createCommand({
+    id: "sk-classification-report",
+    library: "sklearn",
+    category: "evaluate",
+    title: "classification_report()",
+    alias: "分类指标报告",
+    summary: "适合同时查看 precision、recall、f1-score 等分类指标，不必手算。",
+    syntax: "classification_report(y_true, y_pred)",
+    code: `import numpy as np
+from sklearn.metrics import classification_report
+
+y_true = np.array([0, 0, 1, 1, 1])
+y_pred = np.array([0, 1, 1, 1, 0])
+
+print(classification_report(y_true, y_pred))`,
+    keywords: ["classification_report", "precision recall f1", "分类评估", "support"],
+    related: ["sk-confusion-matrix", "sk-roc-auc", "sk-logistic-regression"],
+  }),
+  createCommand({
+    id: "sk-roc-auc",
+    library: "sklearn",
+    category: "evaluate",
+    title: "roc_auc_score()",
+    alias: "ROC AUC 评分",
+    summary: "适合在二分类概率输出场景里衡量模型排序能力，尤其在阈值未固定时很有用。",
+    syntax: "roc_auc_score(y_true, y_score)",
+    code: `import numpy as np
+from sklearn.metrics import roc_auc_score
+
+y_true = np.array([0, 0, 1, 1, 1])
+y_score = np.array([0.12, 0.63, 0.74, 0.88, 0.44])
+
+print(roc_auc_score(y_true, y_score))`,
+    keywords: ["roc_auc_score", "AUC", "概率评分", "ranking quality"],
+    related: ["sk-classification-report", "sk-confusion-matrix", "sk-logistic-regression"],
+  }),
+  createCommand({
+    id: "sk-silhouette-score",
+    library: "sklearn",
+    category: "evaluate",
+    title: "silhouette_score()",
+    alias: "聚类轮廓系数",
+    summary: "适合在无监督聚类里比较簇内紧凑度和簇间分离度。",
+    syntax: "silhouette_score(X, labels)",
+    code: `import numpy as np
+from sklearn.metrics import silhouette_score
+
+X = np.array([[1, 20], [2, 22], [3, 25], [20, 80], [21, 82], [22, 84]], dtype=float)
+labels = np.array([0, 0, 0, 1, 1, 1])
+
+print(silhouette_score(X, labels))`,
+    keywords: ["silhouette_score", "聚类评估", "轮廓系数", "cluster quality"],
+    related: ["sk-kmeans", "plt-scatter", "sns-clustermap"],
+  }),
+  createCommand({
+    id: "keras-sequential",
+    library: "keras",
+    category: "model",
+    title: "keras.Sequential()",
+    alias: "顺序式神经网络",
+    summary: "适合层按顺序堆叠的网络结构，是 Keras 最常见的入门建模方式。",
+    syntax: "keras.Sequential([...])",
+    code: `import keras
+
+model = keras.Sequential([
+    keras.layers.Dense(16, activation="relu", input_shape=(4,)),
+    keras.layers.Dense(1, activation="sigmoid"),
+])
+
+model.summary()`,
+    keywords: ["Sequential", "顺序模型", "neural network", "keras model"],
+    related: ["keras-dense", "keras-compile", "keras-fit"],
+  }),
+  createCommand({
+    id: "keras-dense",
+    library: "keras",
+    category: "model",
+    title: "keras.layers.Dense()",
+    alias: "全连接层",
+    summary: "神经网络中最常见的基础层之一，适合表格特征和分类/回归头部。",
+    syntax: 'keras.layers.Dense(32, activation="relu")',
+    code: `import keras
+
+layer = keras.layers.Dense(32, activation="relu")
+print(layer)`,
+    keywords: ["Dense", "全连接层", "units", "activation"],
+    related: ["keras-sequential", "keras-dropout", "keras-compile"],
+  }),
+  createCommand({
+    id: "keras-dropout",
+    library: "keras",
+    category: "model",
+    title: "keras.layers.Dropout()",
+    alias: "Dropout 正则化层",
+    summary: "适合在训练时随机失活一部分神经元，帮助减轻过拟合。",
+    syntax: "keras.layers.Dropout(0.3)",
+    code: `import keras
+
+model = keras.Sequential([
+    keras.layers.Dense(32, activation="relu", input_shape=(4,)),
+    keras.layers.Dropout(0.3),
+    keras.layers.Dense(1, activation="sigmoid"),
+])
+
+model.summary()`,
+    keywords: ["Dropout", "正则化", "过拟合", "random deactivate"],
+    related: ["keras-dense", "keras-fit", "keras-earlystopping"],
+  }),
+  createCommand({
+    id: "keras-compile",
+    library: "keras",
+    category: "model",
+    title: "model.compile()",
+    alias: "配置优化器、损失和指标",
+    summary: "训练前必须完成的配置步骤，决定模型如何学习以及如何反馈指标。",
+    syntax: 'model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])',
+    code: `model.compile(
+    optimizer="adam",
+    loss="binary_crossentropy",
+    metrics=["accuracy"]
+)`,
+    keywords: ["compile", "optimizer", "loss", "metrics"],
+    related: ["keras-sequential", "keras-fit", "keras-evaluate"],
+  }),
+  createCommand({
+    id: "keras-fit",
+    library: "keras",
+    category: "model",
+    title: "model.fit()",
+    alias: "训练神经网络",
+    summary: "适合在给定训练数据后真正启动迭代训练，并返回训练历史。",
+    syntax: "model.fit(X, y, epochs=10, batch_size=32)",
+    code: `history = model.fit(
+    X,
+    y,
+    epochs=10,
+    batch_size=32,
+    validation_split=0.2,
+    verbose=0
+)
+
+print(history.history.keys())`,
+    keywords: ["fit", "训练", "epochs", "batch_size", "history"],
+    related: ["keras-compile", "keras-earlystopping", "keras-modelcheckpoint"],
+  }),
+  createCommand({
+    id: "keras-evaluate",
+    library: "keras",
+    category: "evaluate",
+    title: "model.evaluate()",
+    alias: "评估模型性能",
+    summary: "适合在验证集或测试集上快速输出损失和指标结果。",
+    syntax: "model.evaluate(X_test, y_test)",
+    code: `loss, acc = model.evaluate(X_test, y_test, verbose=0)
+print(loss, acc)`,
+    keywords: ["evaluate", "测试集评估", "loss accuracy", "keras metrics"],
+    related: ["keras-fit", "keras-predict", "sk-classification-report"],
+  }),
+  createCommand({
+    id: "keras-predict",
+    library: "keras",
+    category: "evaluate",
+    title: "model.predict()",
+    alias: "用训练好的模型做预测",
+    summary: "适合在训练完成后输出概率、回归值或中间表示。",
+    syntax: "model.predict(X_new)",
+    code: `pred = model.predict(X_new, verbose=0)
+print(pred[:3])`,
+    keywords: ["predict", "预测", "inference", "概率输出"],
+    related: ["keras-evaluate", "keras-fit", "sk-logistic-regression"],
+  }),
+  createCommand({
+    id: "keras-earlystopping",
+    library: "keras",
+    category: "evaluate",
+    title: "keras.callbacks.EarlyStopping()",
+    alias: "提前停止训练",
+    summary: "适合在验证集不再改善时自动停止训练，减少过拟合和无效耗时。",
+    syntax: 'keras.callbacks.EarlyStopping(monitor="val_loss", patience=3)',
+    code: `import keras
+
+callback = keras.callbacks.EarlyStopping(
+    monitor="val_loss",
+    patience=3,
+    restore_best_weights=True
+)`,
+    keywords: ["EarlyStopping", "提前停止", "patience", "overfitting"],
+    related: ["keras-fit", "keras-modelcheckpoint", "keras-evaluate"],
+  }),
+  createCommand({
+    id: "keras-modelcheckpoint",
+    library: "keras",
+    category: "evaluate",
+    title: "keras.callbacks.ModelCheckpoint()",
+    alias: "保存最佳模型权重",
+    summary: "适合在训练过程中自动保存最优轮次的模型文件。",
+    syntax: 'keras.callbacks.ModelCheckpoint("best.keras", save_best_only=True)',
+    code: `import keras
+
+checkpoint = keras.callbacks.ModelCheckpoint(
+    "best.keras",
+    monitor="val_loss",
+    save_best_only=True
+)`,
+    keywords: ["ModelCheckpoint", "保存最优模型", "best weights", "callbacks"],
+    related: ["keras-earlystopping", "keras-fit", "keras-predict"],
+  }),
+  createCommand({
+    id: "keras-conv2d",
+    library: "keras",
+    category: "model",
+    title: "keras.layers.Conv2D()",
+    alias: "二维卷积层",
+    summary: "适合图像或局部空间结构明显的数据，是卷积神经网络的基础层。",
+    syntax: 'keras.layers.Conv2D(32, 3, activation="relu")',
+    code: `import keras
+
+model = keras.Sequential([
+    keras.layers.Conv2D(16, 3, activation="relu", input_shape=(28, 28, 1)),
+    keras.layers.Flatten(),
+    keras.layers.Dense(10, activation="softmax"),
+])
+
+model.summary()`,
+    keywords: ["Conv2D", "卷积层", "CNN", "image model"],
+    related: ["keras-sequential", "keras-dense", "keras-fit"],
+  }),
+  createCommand({
+    id: "keras-embedding",
+    library: "keras",
+    category: "text",
+    title: "keras.layers.Embedding()",
+    alias: "词嵌入层",
+    summary: "适合把离散 token id 映射成可训练的稠密向量表示。",
+    syntax: "keras.layers.Embedding(input_dim=5000, output_dim=64)",
+    code: `import keras
+
+model = keras.Sequential([
+    keras.layers.Embedding(input_dim=5000, output_dim=64, input_length=20),
+    keras.layers.GlobalAveragePooling1D(),
+    keras.layers.Dense(1, activation="sigmoid"),
+])
+
+model.summary()`,
+    keywords: ["Embedding", "词向量层", "token id", "text model"],
+    related: ["keras-lstm", "gen-word2vec", "gen-dictionary"],
+  }),
+  createCommand({
+    id: "keras-lstm",
+    library: "keras",
+    category: "model",
+    title: "keras.layers.LSTM()",
+    alias: "LSTM 循环层",
+    summary: "适合处理序列数据和上下文依赖，例如文本序列或简单时间序列。",
+    syntax: "keras.layers.LSTM(32)",
+    code: `import keras
+
+model = keras.Sequential([
+    keras.layers.Embedding(input_dim=5000, output_dim=64),
+    keras.layers.LSTM(32),
+    keras.layers.Dense(1, activation="sigmoid"),
+])
+
+model.summary()`,
+    keywords: ["LSTM", "序列模型", "RNN", "context"],
+    related: ["keras-embedding", "keras-fit", "sm-arima"],
+  }),
+  createCommand({
+    id: "gen-dictionary",
+    library: "gensim",
+    category: "text",
+    title: "corpora.Dictionary()",
+    alias: "从文本集合建立词典",
+    summary: "把词语映射为整数 id，是 gensim 语料处理链的起点。",
+    syntax: "corpora.Dictionary(texts)",
+    code: `from gensim import corpora
+
+texts = [["data", "science", "python"], ["topic", "model", "text"]]
+dictionary = corpora.Dictionary(texts)
+
+print(dictionary.token2id)`,
+    keywords: ["Dictionary", "词典", "token2id", "gensim corpora"],
+    related: ["gen-doc2bow", "gen-tfidfmodel", "gen-phrases"],
+  }),
+  createCommand({
+    id: "gen-doc2bow",
+    library: "gensim",
+    category: "text",
+    title: "dictionary.doc2bow()",
+    alias: "把文档转成词袋向量",
+    summary: "把一篇分词后的文档转成稀疏的 `(token_id, count)` 表示，是主题模型和 TF-IDF 的基础输入。",
+    syntax: 'dictionary.doc2bow(["python", "text", "python"])',
+    code: `from gensim import corpora
+
+texts = [["data", "science", "python"], ["topic", "model", "text"]]
+dictionary = corpora.Dictionary(texts)
+bow = dictionary.doc2bow(["python", "text", "python"])
+
+print(bow)`,
+    keywords: ["doc2bow", "词袋", "bow", "token count"],
+    related: ["gen-dictionary", "gen-tfidfmodel", "gen-ldamodel"],
+  }),
+  createCommand({
+    id: "gen-tfidfmodel",
+    library: "gensim",
+    category: "text",
+    title: "models.TfidfModel()",
+    alias: "构建 TF-IDF 模型",
+    summary: "适合把原始词频转成更强调区分度的文本权重表示。",
+    syntax: "models.TfidfModel(corpus)",
+    code: `from gensim import corpora, models
+
+texts = [["data", "science", "python"], ["topic", "model", "text"]]
+dictionary = corpora.Dictionary(texts)
+corpus = [dictionary.doc2bow(text) for text in texts]
+tfidf = models.TfidfModel(corpus)
+
+print(tfidf[corpus[0]])`,
+    keywords: ["TfidfModel", "TF-IDF", "文本权重", "gensim models"],
+    related: ["gen-doc2bow", "gen-ldamodel", "gen-similarities-matrixsimilarity"],
+  }),
+  createCommand({
+    id: "gen-ldamodel",
+    library: "gensim",
+    category: "text",
+    title: "models.LdaModel()",
+    alias: "训练 LDA 主题模型",
+    summary: "适合从语料中学习潜在主题结构，理解文档在不同主题上的分布。",
+    syntax: "models.LdaModel(corpus=corpus, id2word=dictionary, num_topics=3)",
+    code: `from gensim import corpora, models
+
+texts = [
+    ["data", "science", "python"],
+    ["topic", "model", "text"],
+    ["python", "machine", "learning"],
+]
+dictionary = corpora.Dictionary(texts)
+corpus = [dictionary.doc2bow(text) for text in texts]
+lda = models.LdaModel(corpus=corpus, id2word=dictionary, num_topics=2, passes=10, random_state=7)
+
+print(lda.get_document_topics(corpus[0]))`,
+    keywords: ["LdaModel", "主题模型", "num_topics", "document topics"],
+    related: ["gen-tfidfmodel", "gen-ldamodel-print-topics", "gen-doc2bow"],
+  }),
+  createCommand({
+    id: "gen-ldamodel-print-topics",
+    library: "gensim",
+    category: "text",
+    title: "lda.print_topics()",
+    alias: "查看主题关键词",
+    summary: "适合快速查看每个主题由哪些高权重词组成，帮助做人类可解释的主题命名。",
+    syntax: "lda.print_topics()",
+    code: `topics = lda.print_topics()
+for topic in topics:
+    print(topic)`,
+    keywords: ["print_topics", "主题关键词", "topic words", "LDA explain"],
+    related: ["gen-ldamodel", "gen-tfidfmodel", "sns-barplot"],
+  }),
+  createCommand({
+    id: "gen-word2vec",
+    library: "gensim",
+    category: "text",
+    title: "models.Word2Vec()",
+    alias: "训练词向量模型",
+    summary: "适合学习词语的分布式表示，用于相似词检索和语义邻近分析。",
+    syntax: "Word2Vec(sentences=sentences, vector_size=100)",
+    code: `from gensim.models import Word2Vec
+
+sentences = [
+    ["data", "science"],
+    ["machine", "learning"],
+    ["deep", "learning"],
+    ["science", "model"],
+]
+
+model = Word2Vec(sentences=sentences, vector_size=20, window=2, min_count=1, workers=1, epochs=50)
+print(model.wv["science"][:5])`,
+    keywords: ["Word2Vec", "词向量", "semantic similarity", "embedding"],
+    related: ["gen-keyedvectors-most-similar", "keras-embedding", "gen-phrases"],
+  }),
+  createCommand({
+    id: "gen-keyedvectors-most-similar",
+    library: "gensim",
+    category: "text",
+    title: "model.wv.most_similar()",
+    alias: "查找语义最相近的词",
+    summary: "适合在训练好词向量后快速查看某个词附近的语义邻居。",
+    syntax: 'model.wv.most_similar("learning", topn=5)',
+    code: `similar_words = model.wv.most_similar("learning", topn=3)
+print(similar_words)`,
+    keywords: ["most_similar", "相似词", "word vectors", "semantic neighbors"],
+    related: ["gen-word2vec", "gen-similarities-matrixsimilarity", "sp-spatial-cdist"],
+  }),
+  createCommand({
+    id: "gen-similarities-matrixsimilarity",
+    library: "gensim",
+    category: "text",
+    title: "similarities.MatrixSimilarity()",
+    alias: "建立文档相似度索引",
+    summary: "适合在 TF-IDF 或其它向量空间表示上快速比较查询文本与文档集合的相似度。",
+    syntax: "similarities.MatrixSimilarity(tfidf[corpus])",
+    code: `from gensim import corpora, models, similarities
+
+texts = [["data", "science", "python"], ["topic", "model", "text"], ["python", "machine", "learning"]]
+dictionary = corpora.Dictionary(texts)
+corpus = [dictionary.doc2bow(text) for text in texts]
+tfidf = models.TfidfModel(corpus)
+index = similarities.MatrixSimilarity(tfidf[corpus])
+query = dictionary.doc2bow(["python", "science"])
+
+print(index[tfidf[query]])`,
+    keywords: ["MatrixSimilarity", "文档相似度", "information retrieval", "tfidf search"],
+    related: ["gen-tfidfmodel", "gen-doc2bow", "gen-keyedvectors-most-similar"],
+  }),
+  createCommand({
+    id: "gen-phrases",
+    library: "gensim",
+    category: "text",
+    title: "models.Phrases()",
+    alias: "识别多词短语",
+    summary: "适合在分词结果中自动发现像 `new_york` 这种高频搭配短语。",
+    syntax: "Phrases(sentences, min_count=2, threshold=5)",
+    code: `from gensim.models import Phrases
+
+sentences = [
+    ["new", "york", "city"],
+    ["machine", "learning", "model"],
+    ["new", "york", "times"],
+]
+
+phrases = Phrases(sentences, min_count=1, threshold=1)
+print(list(phrases[sentences]))`,
+    keywords: ["Phrases", "短语发现", "bigram", "collocation"],
+    related: ["gen-dictionary", "gen-word2vec", "pd-str-extract"],
   }),
 ]

@@ -455,6 +455,18 @@ const categoryAdvice = {
     "信号处理类方法很适合平滑、峰值检测和卷积，但要避免过度处理掩盖真实结构。",
     "滤波前先确认采样频率、窗口大小和边界处理方式。",
   ],
+  model: [
+    "建模前先把特征、标签、数据切分和口径说清楚，再讨论算法效果。",
+    "训练结果除了看分数，还要看是否存在过拟合、数据泄漏或形状错误。",
+  ],
+  evaluate: [
+    "评估类命令最好和业务目标一起理解，不要只看单个指标的高低。",
+    "分类、回归和聚类的评估指标完全不同，先确认任务类型再选。",
+  ],
+  text: [
+    "文本挖掘前要先想清楚语料清洗、分词和停用词策略。",
+    "主题模型和词向量的输入结构不同，理解语料表示方式比背 API 更重要。",
+  ],
   plot: [
     "先确认数据结构是否适合当前图表，再调颜色、注释和版式。",
     "图表完成后最好补标题、轴标签和保存参数，方便直接复用到报告。",
@@ -470,6 +482,18 @@ const libraryAdvice = {
   ],
   scipy: [
     "scipy 更偏算法与统计推断，除了会用 API，更要清楚前提假设和参数口径。",
+  ],
+  statsmodels: [
+    "statsmodels 更强调模型解释和统计推断，拟合结果里的系数、置信区间和检验信息很重要。",
+  ],
+  sklearn: [
+    "scikit-learn 更像流程化机器学习工具箱，切分、预处理、训练和评估最好通过统一流水线串起来。",
+  ],
+  keras: [
+    "keras 命令需要和输入张量形状一起看，网络层堆叠时先想清楚维度流动。",
+  ],
+  gensim: [
+    "gensim 的核心不是表格，而是语料、词典、词袋和语义空间之间的转换关系。",
   ],
   seaborn: [
     "seaborn 更擅长统计图和长表输入，分组字段太多时要主动收敛视觉层次。",
@@ -505,6 +529,12 @@ const categoryProfessional = {
     "优化类 API 的重点是目标函数是否光滑、约束形式、初始值敏感性以及收敛状态解读。",
   signal:
     "信号处理类 API 需要关注窗口长度、边界条件、采样频率以及是否引入相位偏移。",
+  model:
+    "建模训练类 API 的重点是输入特征结构、训练数据边界、超参数设定以及是否存在数据泄漏。",
+  evaluate:
+    "评估类 API 的专业重点是指标与任务类型的匹配，以及阈值、样本不均衡和交叉验证口径的影响。",
+  text:
+    "文本挖掘类 API 的关键在于语料预处理、词典构建方式、稀疏表示和语义空间解释。",
   plot:
     "绘图类 API 除了图形本身，还要关注输入表结构、聚合口径和最终输出清晰度。",
 }
@@ -516,6 +546,14 @@ const libraryProfessional = {
     "在 numpy 里，很多函数默认返回 ndarray；广播失败或 dtype 提升往往是定位问题的第一入口。",
   scipy:
     "在 scipy 里，很多函数返回的不只是数值本身，还会附带检验统计量、拟合参数、协方差或求解状态信息。",
+  statsmodels:
+    "在 statsmodels 里，模型对象、结果对象和 summary 输出的层次关系，是理解统计建模结果的关键。",
+  sklearn:
+    "在 scikit-learn 里，Estimator、Transformer、Pipeline 和 Metric 之间的角色分工非常明确。",
+  keras:
+    "在 keras 里，模型结构、compile 配置、fit 过程和 callback 行为共同决定训练表现。",
+  gensim:
+    "在 gensim 里，Dictionary、Corpus、Model 和 Similarity 索引通常是串联出现的一整条文本处理链。",
   seaborn:
     "在 seaborn 里，很多图默认会做统计聚合或置信区间估计，专业使用时要主动确认估计口径。",
   matplotlib:
@@ -591,6 +629,78 @@ function buildGenericParameters(command) {
       getParam("y"),
       getParam("method"),
       getParam("axis_numpy"),
+    ]
+  }
+
+  if (command.library === "statsmodels") {
+    return [
+      getParam("X", {
+        name: "X / exog",
+        meaning: "自变量或外生变量矩阵。",
+        detail: "通常每行一个样本、每列一个特征，是否含常数项会直接影响系数解释。",
+      }),
+      getParam("y", {
+        name: "y / endog",
+        meaning: "因变量或被解释变量。",
+        detail: "长度需要与自变量样本数一致。",
+      }),
+      getParam("formula", {
+        name: "formula",
+        meaning: "公式字符串。",
+        detail: "公式接口能直接引用 DataFrame 列名，适合可解释建模。",
+      }),
+      getParam("data"),
+    ]
+  }
+
+  if (command.library === "sklearn") {
+    return [
+      getParam("X", {
+        name: "X",
+        meaning: "特征矩阵。",
+        detail: "scikit-learn 几乎所有 estimator 都把 X 视为样本 x 特征的二维结构。",
+      }),
+      getParam("y", {
+        name: "y",
+        meaning: "监督学习任务中的标签。",
+        detail: "分类和回归任务都需要，长度应与 X 的样本数一致。",
+      }),
+      getParam("random_state"),
+      getParam("method"),
+    ]
+  }
+
+  if (command.library === "keras") {
+    return [
+      getParam("input_shape", {
+        name: "input_shape",
+        meaning: "输入张量除批大小外的形状。",
+        detail: "网络第一层最常需要它，形状定义错误会直接导致模型无法训练。",
+      }),
+      getParam("units", {
+        name: "units / filters",
+        meaning: "神经元数量或卷积核数量。",
+        detail: "直接决定层的表达能力和参数规模。",
+      }),
+      getParam("activation"),
+      getParam("epochs"),
+    ]
+  }
+
+  if (command.library === "gensim") {
+    return [
+      getParam("texts", {
+        name: "texts / corpus",
+        meaning: "分词后的文本集合或语料表示。",
+        detail: "通常是二维 token 列表，或经词袋编码后的语料对象。",
+      }),
+      getParam("dictionary", {
+        name: "dictionary",
+        meaning: "词典对象。",
+        detail: "它负责在词与整数 id 之间建立映射，是 gensim 流程的核心枢纽。",
+      }),
+      getParam("model"),
+      getParam("num_topics"),
     ]
   }
 
@@ -1525,6 +1635,562 @@ function buildParameterDocs(command) {
         meaning: "可选的输出缓冲区。",
         detail: "性能敏感或想避免额外分配内存时可使用。",
       })]
+    case "sm-add-constant":
+      return [getParam("data"), getParam("prepend", {
+        name: "prepend",
+        meaning: "常数项插到最前面还是最后面。",
+        detail: "为了与后续系数表顺序保持一致，很多人会显式关注这一点。",
+      }), getParam("has_constant", {
+        name: "has_constant",
+        meaning: "如果数据里已经有常数列时该如何处理。",
+        detail: "避免无意中加出重复截距列，是设计矩阵构造里的常见细节。",
+      })]
+    case "sm-ols":
+    case "sm-logit":
+      return [getParam("X", {
+        name: "exog / X",
+        meaning: "自变量矩阵。",
+        detail: "通常需要自己决定是否加入常数项，这与公式接口不同。",
+      }), getParam("y", {
+        name: "endog / y",
+        meaning: "因变量。",
+        detail: "行数必须与 X 对齐，否则模型无法拟合。",
+      }), getParam("missing", {
+        name: "missing",
+        meaning: "缺失值处理方式。",
+        detail: "statsmodels 对缺失比较敏感，正式建模前最好先显式处理。",
+      })]
+    case "sm-formula-ols":
+      return [getParam("formula", {
+        meaning: "模型公式字符串。",
+        detail: "可以写连续变量、分类变量 `C()` 和交互项，是 statsmodels 公式接口的核心。",
+      }), getParam("data"), getParam("subset"), getParam("eval_env", {
+        name: "eval_env",
+        meaning: "公式求值环境。",
+        detail: "当公式里引用 Python 变量或自定义函数时可能会用到。",
+      })]
+    case "sm-summary":
+      return [getParam("alpha", {
+        name: "alpha",
+        meaning: "置信区间显著性水平。",
+        detail: "会影响置信区间的宽度与展示口径。",
+      }), getParam("float_format", {
+        name: "float_format",
+        meaning: "摘要表中的数值格式。",
+        detail: "输出给报告时偶尔会需要统一格式化。",
+      })]
+    case "sm-anova-lm":
+      return [getParam("model"), getParam("typ", {
+        name: "typ",
+        meaning: "方差分析的平方和类型。",
+        detail: "Type I / II / III 会改变解释口径，类别不平衡时尤其要谨慎。",
+      }), getParam("robust", {
+        name: "robust",
+        meaning: "是否使用稳健协方差修正。",
+        detail: "异方差风险较高时值得关注。",
+      })]
+    case "sm-descrstats":
+      return [getParam("data"), getParam("weights", {
+        name: "weights",
+        meaning: "观测权重。",
+        detail: "抽样调查或加权样本分析时会非常重要。",
+      }), getParam("ddof", {
+        name: "ddof",
+        meaning: "自由度修正。",
+        detail: "会影响标准差和标准误差的统计口径。",
+      })]
+    case "sm-acf-pacf":
+      return [getParam("x"), getParam("nlags", {
+        name: "nlags",
+        meaning: "要计算到第几个滞后阶。",
+        detail: "太短看不出结构，太长则可能增加噪声和不稳定性。",
+      }), getParam("fft", {
+        name: "fft",
+        meaning: "acf 是否使用快速傅里叶方式加速。",
+        detail: "长序列场景常更快，但需要留意数值差异。",
+      }), getParam("method", {
+        name: "method",
+        meaning: "pacf 的估计方法。",
+        detail: "不同方法在短样本下表现可能不同。",
+      })]
+    case "sm-seasonal-decompose":
+      return [getParam("x"), getParam("model", {
+        meaning: "分解模型类型。",
+        detail: "常见 additive 和 multiplicative，取决于季节波动是否随水平放大。",
+      }), getParam("period"), getParam("two_sided", {
+        name: "two_sided",
+        meaning: "趋势滤波时是否双边平滑。",
+        detail: "会影响趋势项在边界附近的计算方式。",
+      })]
+    case "sm-arima":
+      return [getParam("endog", {
+        name: "endog / series",
+        meaning: "待建模的时间序列。",
+        detail: "通常要求顺序正确，必要时先差分或稳定化处理。",
+      }), getParam("order"), getParam("seasonal_order", {
+        name: "seasonal_order",
+        meaning: "季节性阶数设定。",
+        detail: "SARIMA 场景才需要，它会把季节结构显式建模进去。",
+      }), getParam("trend", {
+        name: "trend",
+        meaning: "趋势项设定。",
+        detail: "决定模型里是否包含常数或线性趋势项。",
+      })]
+    case "sm-qqplot":
+      return [getParam("data"), getParam("line", {
+        name: "line",
+        meaning: "参考线样式。",
+        detail: "常见 45、s、r、q 等方式，帮助观察样本与理论分布的偏离。",
+      }), getParam("fit", {
+        name: "fit",
+        meaning: "是否先估计分布参数再画图。",
+        detail: "不同的 fit 选择会影响参考线与点位的对照方式。",
+      })]
+    case "sk-train-test-split":
+      return [getParam("X"), getParam("y"), getParam("test_size"), getParam("random_state"), getParam("stratify", {
+        name: "stratify",
+        meaning: "是否按标签分层抽样。",
+        detail: "类别不平衡时很重要，能让训练集和测试集类比例更一致。",
+      })]
+    case "sk-standardscaler":
+    case "sk-minmaxscaler":
+      return [getParam("X"), getParam("with_mean", {
+        name: "with_mean / feature_range",
+        meaning: "标准化的居中方式或归一化区间。",
+        detail: "StandardScaler 和 MinMaxScaler 会在这个层面决定缩放口径。",
+      }), getParam("with_std", {
+        name: "with_std",
+        meaning: "StandardScaler 是否按标准差缩放。",
+        detail: "对稀疏矩阵或特殊尺度场景有时会关闭。",
+      })]
+    case "sk-onehotencoder":
+      return [getParam("handle_unknown", {
+        name: "handle_unknown",
+        meaning: "遇到训练时没见过的新类别时如何处理。",
+        detail: "上线环境中很常见，ignore 通常更稳。",
+      }), getParam("sparse_output", {
+        name: "sparse_output",
+        meaning: "输出稀疏矩阵还是稠密数组。",
+        detail: "类别很多时稀疏输出更省内存。",
+      }), getParam("drop", {
+        name: "drop",
+        meaning: "是否丢弃一列以减少完全共线性。",
+        detail: "线性模型场景里有时会这样做。",
+      })]
+    case "sk-simpleimputer":
+      return [getParam("strategy", {
+        name: "strategy",
+        meaning: "填补策略。",
+        detail: "mean、median、most_frequent、constant 会直接决定补值口径。",
+      }), getParam("fill_value", {
+        name: "fill_value",
+        meaning: "constant 策略时使用的填充值。",
+        detail: "文本或特殊占位场景经常会用到。",
+      }), getParam("add_indicator", {
+        name: "add_indicator",
+        meaning: "是否额外输出缺失指示列。",
+        detail: "缺失本身可能有信息量时很有帮助。",
+      })]
+    case "sk-columntransformer":
+      return [getParam("transformers", {
+        name: "transformers",
+        meaning: "每一列分组对应的预处理器列表。",
+        detail: "结构通常是 `(name, transformer, columns)` 三元组列表。",
+      }), getParam("remainder", {
+        name: "remainder",
+        meaning: "未显式列出的列如何处理。",
+        detail: "drop 或 passthrough 都很常见，会影响最终特征是否保留。",
+      }), getParam("sparse_threshold", {
+        name: "sparse_threshold",
+        meaning: "决定输出是否转成稀疏矩阵的阈值。",
+        detail: "高维编码场景很值得关注。",
+      })]
+    case "sk-pipeline":
+      return [getParam("steps", {
+        name: "steps",
+        meaning: "流水线步骤列表。",
+        detail: "除了最后一步通常是 estimator，前面的步骤一般需要同时有 `fit` 和 `transform` 能力。",
+      }), getParam("memory", {
+        name: "memory",
+        meaning: "是否缓存中间步骤结果。",
+        detail: "大流水线重复调参时能节省时间。",
+      }), getParam("verbose", {
+        name: "verbose",
+        meaning: "是否输出步骤执行日志。",
+        detail: "调试长流水线时很有帮助。",
+      })]
+    case "sk-linear-regression":
+      return [getParam("fit_intercept", {
+        name: "fit_intercept",
+        meaning: "是否拟合截距。",
+        detail: "如果特征已经过适当中心化，有时可以关闭。",
+      }), getParam("positive", {
+        name: "positive",
+        meaning: "是否强制系数为非负。",
+        detail: "有物理意义或业务限制时很实用。",
+      })]
+    case "sk-logistic-regression":
+      return [getParam("penalty", {
+        name: "penalty",
+        meaning: "正则化类型。",
+        detail: "L1、L2、elasticnet 会影响稀疏性和稳定性。",
+      }), getParam("C", {
+        name: "C",
+        meaning: "正则化强度的倒数。",
+        detail: "值越大正则越弱，越容易贴合训练集。",
+      }), getParam("solver", {
+        name: "solver",
+        meaning: "优化求解器。",
+        detail: "不同 penalty 和数据规模适配的 solver 不一样。",
+      }), getParam("max_iter", {
+        name: "max_iter",
+        meaning: "最大迭代次数。",
+        detail: "出现未收敛警告时常需要提高。",
+      })]
+    case "sk-random-forest":
+      return [getParam("n_estimators", {
+        name: "n_estimators",
+        meaning: "树的数量。",
+        detail: "树更多通常更稳，但训练和预测成本也会上升。",
+      }), getParam("max_depth", {
+        name: "max_depth",
+        meaning: "单棵树的最大深度。",
+        detail: "限制深度是控制过拟合的重要手段。",
+      }), getParam("random_state"), getParam("class_weight", {
+        name: "class_weight",
+        meaning: "类别权重。",
+        detail: "类别不平衡时很常用。",
+      })]
+    case "sk-kmeans":
+      return [getParam("n_clusters", {
+        name: "n_clusters",
+        meaning: "簇的数量。",
+        detail: "需要结合业务理解和评估指标来选，而不是机械固定。",
+      }), getParam("n_init", {
+        name: "n_init",
+        meaning: "不同初始中心重复运行的次数。",
+        detail: "能降低陷入差的局部最优的风险。",
+      }), getParam("random_state"), getParam("max_iter", {
+        name: "max_iter",
+        meaning: "单次运行的最大迭代次数。",
+        detail: "数据复杂时有时需要提高。",
+      })]
+    case "sk-pca":
+      return [getParam("n_components", {
+        name: "n_components",
+        meaning: "保留的主成分数。",
+        detail: "可按固定个数、方差比例或自动策略指定。",
+      }), getParam("svd_solver", {
+        name: "svd_solver",
+        meaning: "底层奇异值分解求解方式。",
+        detail: "数据规模较大时会影响性能和数值稳定性。",
+      }), getParam("whiten", {
+        name: "whiten",
+        meaning: "是否对白化后的主成分做单位方差缩放。",
+        detail: "某些下游模型里会考虑这样做。",
+      })]
+    case "sk-cross-val-score":
+      return [getParam("estimator", {
+        name: "estimator",
+        meaning: "要评估的模型对象。",
+        detail: "它需要实现 `fit`，并根据任务支持相应评分。",
+      }), getParam("cv", {
+        name: "cv",
+        meaning: "交叉验证折数或切分器。",
+        detail: "分类、时间序列和分组任务的切分器往往不同。",
+      }), getParam("scoring", {
+        name: "scoring",
+        meaning: "评估指标名称或评分函数。",
+        detail: "不显式指定时通常用 estimator 默认分数，但这不一定是你真正关心的指标。",
+      })]
+    case "sk-grid-search":
+      return [getParam("estimator", {
+        name: "estimator",
+        meaning: "待调参模型。",
+        detail: "如果是 Pipeline，参数名通常要写成 `step__param` 形式。",
+      }), getParam("param_grid", {
+        name: "param_grid",
+        meaning: "要枚举的参数网格。",
+        detail: "范围过大时会指数级增慢，所以需要先收敛候选集。",
+      }), getParam("cv"), getParam("scoring"), getParam("refit", {
+        name: "refit",
+        meaning: "找到最佳参数后是否用全训练集重新拟合。",
+        detail: "大多数正式建模场景都会保持开启。",
+      })]
+    case "sk-confusion-matrix":
+    case "sk-classification-report":
+      return [getParam("y_true", {
+        name: "y_true",
+        meaning: "真实标签。",
+        detail: "必须与预测结果一一对应，顺序不能错。",
+      }), getParam("y_pred", {
+        name: "y_pred",
+        meaning: "预测标签。",
+        detail: "它与阈值选择和模型输出后处理密切相关。",
+      }), getParam("labels", {
+        name: "labels",
+        meaning: "需要展示或统计的标签顺序。",
+        detail: "显式指定后更适合做稳定报表。",
+      })]
+    case "sk-roc-auc":
+      return [getParam("y_true", {
+        name: "y_true",
+        meaning: "真实标签。",
+        detail: "二分类时最常见，多分类场景还要指定额外策略。",
+      }), getParam("y_score", {
+        name: "y_score",
+        meaning: "模型输出的概率或决策分数。",
+        detail: "不是最终 0/1 标签，而是用于排序的连续值。",
+      }), getParam("average", {
+        name: "average",
+        meaning: "多分类或多标签任务下的汇总方式。",
+        detail: "macro、weighted 等会影响最终汇总口径。",
+      })]
+    case "sk-silhouette-score":
+      return [getParam("X"), getParam("labels", {
+        name: "labels",
+        meaning: "聚类标签结果。",
+        detail: "每个样本需要有一个簇编号，才能计算轮廓系数。",
+      }), getParam("metric", {
+        name: "metric",
+        meaning: "样本间距离度量。",
+        detail: "欧氏距离最常见，但高维文本或稀疏数据可能会考虑别的度量。",
+      })]
+    case "keras-sequential":
+      return [getParam("layers", {
+        name: "layers",
+        meaning: "按顺序堆叠的层列表。",
+        detail: "适合单输入单输出、拓扑简单的网络结构。",
+      }), getParam("name", {
+        name: "name",
+        meaning: "模型名称。",
+        detail: "复杂项目或导出多模型时更便于区分。",
+      })]
+    case "keras-dense":
+      return [getParam("units", {
+        name: "units",
+        meaning: "神经元数量。",
+        detail: "会影响模型容量和参数量。",
+      }), getParam("activation", {
+        name: "activation",
+        meaning: "激活函数。",
+        detail: "relu、sigmoid、softmax 会直接影响层输出分布和任务适配性。",
+      }), getParam("use_bias", {
+        name: "use_bias",
+        meaning: "是否使用偏置项。",
+        detail: "大多数情况下保持默认即可。",
+      })]
+    case "keras-dropout":
+      return [getParam("rate", {
+        name: "rate",
+        meaning: "随机失活比例。",
+        detail: "过大可能导致欠拟合，过小则正则效果有限。",
+      }), getParam("seed"), getParam("noise_shape", {
+        name: "noise_shape",
+        meaning: "自定义 dropout 掩码的形状。",
+        detail: "序列或特殊结构模型中偶尔会需要。",
+      })]
+    case "keras-compile":
+      return [getParam("optimizer", {
+        name: "optimizer",
+        meaning: "优化器。",
+        detail: "adam 是高频默认项，但任务和学习率策略不同会影响选择。",
+      }), getParam("loss", {
+        name: "loss",
+        meaning: "损失函数。",
+        detail: "必须与任务和输出层匹配，比如二分类与多分类的选择不同。",
+      }), getParam("metrics", {
+        name: "metrics",
+        meaning: "训练和评估时额外追踪的指标。",
+        detail: "适合监控准确率、AUC 等任务相关指标。",
+      })]
+    case "keras-fit":
+      return [getParam("X"), getParam("y"), getParam("epochs", {
+        name: "epochs",
+        meaning: "训练轮数。",
+        detail: "并不是越多越好，通常要结合验证集和回调一起看。",
+      }), getParam("batch_size", {
+        name: "batch_size",
+        meaning: "每次梯度更新使用的样本数。",
+        detail: "影响训练稳定性、速度和显存占用。",
+      }), getParam("validation_split", {
+        name: "validation_split",
+        meaning: "从训练数据中切出多少比例作为验证集。",
+        detail: "快速实验很方便，但正式流程中也常单独准备验证集。",
+      })]
+    case "keras-evaluate":
+    case "keras-predict":
+      return [getParam("X"), getParam("y", {
+        name: "y",
+        meaning: "evaluate 时的真实标签。",
+        detail: "predict 不需要这个参数，但 evaluate 需要它计算指标。",
+      }), getParam("batch_size"), getParam("verbose", {
+        name: "verbose",
+        meaning: "日志输出详细程度。",
+        detail: "批量预测或自动化任务中经常会设为 0。",
+      })]
+    case "keras-earlystopping":
+    case "keras-modelcheckpoint":
+      return [getParam("monitor", {
+        name: "monitor",
+        meaning: "要监控的指标名。",
+        detail: "常见是 val_loss、val_accuracy 等验证集指标。",
+      }), getParam("patience", {
+        name: "patience / save_best_only",
+        meaning: "等待改善的轮数，或是否只保存最佳模型。",
+        detail: "两类回调虽不同，但都围绕“如何挑选最好的一轮”展开。",
+      }), getParam("mode", {
+        name: "mode",
+        meaning: "指标是希望更大还是更小。",
+        detail: "例如 loss 要 min，accuracy 要 max。",
+      })]
+    case "keras-conv2d":
+      return [getParam("filters", {
+        name: "filters",
+        meaning: "卷积核数量。",
+        detail: "决定输出特征图的通道数。",
+      }), getParam("kernel_size", {
+        name: "kernel_size",
+        meaning: "卷积核大小。",
+        detail: "常见是 3x3 或 5x5，影响局部感受野。",
+      }), getParam("activation"), getParam("padding", {
+        name: "padding",
+        meaning: "边界填充方式。",
+        detail: "same 和 valid 会影响输出空间尺寸。",
+      })]
+    case "keras-embedding":
+      return [getParam("input_dim", {
+        name: "input_dim",
+        meaning: "词表大小或最大 token id 范围。",
+        detail: "决定嵌入矩阵第一维大小。",
+      }), getParam("output_dim", {
+        name: "output_dim",
+        meaning: "每个 token 的向量维度。",
+        detail: "维度越大表达力通常越强，但参数量也更高。",
+      }), getParam("input_length", {
+        name: "input_length",
+        meaning: "输入序列长度。",
+        detail: "某些下游层或导出场景中会更容易推断形状。",
+      })]
+    case "keras-lstm":
+      return [getParam("units", {
+        name: "units",
+        meaning: "LSTM 隐状态维度。",
+        detail: "直接决定序列表达能力和参数规模。",
+      }), getParam("return_sequences", {
+        name: "return_sequences",
+        meaning: "是否返回每个时间步的输出。",
+        detail: "堆叠多层 LSTM 或接序列标注头时经常要开启。",
+      }), getParam("dropout"), getParam("recurrent_dropout", {
+        name: "recurrent_dropout",
+        meaning: "循环状态上的 dropout 比例。",
+        detail: "会增加正则化，但也可能让训练更慢。",
+      })]
+    case "gen-dictionary":
+      return [getParam("documents", {
+        name: "documents / texts",
+        meaning: "分词后的文档集合。",
+        detail: "通常是二维 token 列表，而不是原始长字符串。",
+      }), getParam("prune_at", {
+        name: "prune_at",
+        meaning: "词典构建时的临时裁剪上限。",
+        detail: "大语料场景下可用来控制内存。",
+      })]
+    case "gen-doc2bow":
+      return [getParam("document", {
+        name: "document",
+        meaning: "单篇分词后的文档。",
+        detail: "输出会是稀疏的 `(token_id, count)` 结构。",
+      }), getParam("allow_update", {
+        name: "allow_update",
+        meaning: "是否允许在转换时更新词典。",
+        detail: "正式推理时通常关闭，以保持词典稳定。",
+      }), getParam("return_missing", {
+        name: "return_missing",
+        meaning: "是否返回词典中缺失的词。",
+        detail: "调试词典覆盖率时很有帮助。",
+      })]
+    case "gen-tfidfmodel":
+      return [getParam("corpus"), getParam("dictionary"), getParam("normalize", {
+        name: "normalize",
+        meaning: "是否对 TF-IDF 向量归一化。",
+        detail: "相似度检索场景下很常见。",
+      }), getParam("smartirs", {
+        name: "smartirs",
+        meaning: "SMART 信息检索加权方案。",
+        detail: "需要更精细控制权重口径时可关注。",
+      })]
+    case "gen-ldamodel":
+    case "gen-ldamodel-print-topics":
+      return [getParam("corpus"), getParam("id2word", {
+        name: "id2word / dictionary",
+        meaning: "词 id 到词语的映射。",
+        detail: "没有它就很难把主题结果解释回真实词语。",
+      }), getParam("num_topics", {
+        name: "num_topics",
+        meaning: "主题数量。",
+        detail: "过少会混主题，过多会碎片化，通常需要多轮试验。",
+      }), getParam("passes", {
+        name: "passes",
+        meaning: "完整遍历语料的轮数。",
+        detail: "更多 passes 会让主题更稳定，但训练更慢。",
+      }), getParam("random_state")]
+    case "gen-word2vec":
+      return [getParam("sentences", {
+        name: "sentences",
+        meaning: "分词后的句子序列。",
+        detail: "每个句子是 token 列表，顺序会影响上下文学习。",
+      }), getParam("vector_size", {
+        name: "vector_size",
+        meaning: "词向量维度。",
+        detail: "维度越大通常表达力越强，但训练成本更高。",
+      }), getParam("window", {
+        name: "window",
+        meaning: "上下文窗口大小。",
+        detail: "窗口越大越偏主题共现，越小越偏局部语法。",
+      }), getParam("min_count", {
+        name: "min_count",
+        meaning: "低频词过滤阈值。",
+        detail: "能减少噪声词，但也可能丢掉稀有重要词。",
+      }), getParam("epochs")]
+    case "gen-keyedvectors-most-similar":
+      return [getParam("positive", {
+        name: "positive",
+        meaning: "正向相似或类比的词列表。",
+        detail: "可以传单词，也可以传多个词做向量组合。",
+      }), getParam("negative", {
+        name: "negative",
+        meaning: "反向抵消的词列表。",
+        detail: "做类比推理时常见，例如 king - man + woman。",
+      }), getParam("topn", {
+        name: "topn",
+        meaning: "返回前多少个相似词。",
+        detail: "调试时可以先少量查看，避免输出过长。",
+      })]
+    case "gen-similarities-matrixsimilarity":
+      return [getParam("corpus"), getParam("num_features", {
+        name: "num_features",
+        meaning: "向量空间维度。",
+        detail: "词表很大时最好显式指定，避免索引维度不清晰。",
+      }), getParam("chunksize", {
+        name: "chunksize",
+        meaning: "批处理大小。",
+        detail: "语料较大时会影响构建速度和内存使用。",
+      })]
+    case "gen-phrases":
+      return [getParam("sentences"), getParam("min_count", {
+        name: "min_count",
+        meaning: "短语至少出现多少次才会被考虑。",
+        detail: "能过滤掉偶然拼在一起的低频噪声搭配。",
+      }), getParam("threshold", {
+        name: "threshold",
+        meaning: "成为短语的得分门槛。",
+        detail: "值越低越容易合并成短语。",
+      }), getParam("delimiter", {
+        name: "delimiter",
+        meaning: "短语连接符。",
+        detail: "默认常会用下划线，把多词表达合成一个 token。",
+      })]
     case "sns-set-theme":
     case "sns-despine":
     case "sns-color-palette":
@@ -1976,6 +2642,386 @@ function getScipyWorkflowLines(command, mode = "workflow") {
   }
 }
 
+function getStatsmodelsWorkflowLines(command, mode = "workflow") {
+  switch (command.id) {
+    case "sm-add-constant":
+    case "sm-ols":
+    case "sm-summary":
+      return [
+        "import pandas as pd",
+        "import statsmodels.api as sm",
+        "",
+        "df = pd.DataFrame({",
+        '    "sales": [120, 138, 146, 160, 174],',
+        '    "ad_cost": [20, 22, 25, 26, 29],',
+        '    "visits": [400, 430, 460, 500, 530],',
+        "})",
+        'X = sm.add_constant(df[["ad_cost", "visits"]])',
+        'y = df["sales"]',
+        'model = sm.OLS(y, X).fit()',
+        command.id === "sm-add-constant"
+          ? 'print(sm.add_constant(df[["ad_cost", "visits"]]).head())'
+          : command.id === "sm-summary"
+            ? mode === "workflow"
+              ? "print(model.summary())"
+              : 'print("r2:", round(model.rsquared, 4))'
+            : mode === "workflow"
+              ? "print(model.params)"
+              : 'print("coef:", model.params.to_dict())',
+      ]
+    case "sm-formula-ols":
+    case "sm-anova-lm":
+      return [
+        "import pandas as pd",
+        "import statsmodels.formula.api as smf",
+        "import statsmodels.api as sm",
+        "",
+        "df = pd.DataFrame({",
+        '    "sales": [120, 138, 146, 160, 174, 182],',
+        '    "ad_cost": [20, 22, 25, 26, 29, 31],',
+        '    "channel": ["Online", "Online", "Store", "Store", "Online", "Store"],',
+        "})",
+        'model = smf.ols("sales ~ ad_cost + C(channel)", data=df).fit()',
+        command.id === "sm-formula-ols"
+          ? mode === "workflow"
+            ? "print(model.params)"
+            : 'print("aic:", round(model.aic, 3))'
+          : mode === "workflow"
+            ? "print(sm.stats.anova_lm(model, typ=2))"
+            : 'print("done")',
+      ]
+    case "sm-descrstats":
+      return [
+        "import numpy as np",
+        "from statsmodels.stats.weightstats import DescrStatsW",
+        "",
+        "values = np.array([120, 138, 146, 160, 174], dtype=float)",
+        "stats = DescrStatsW(values)",
+        mode === "workflow" ? "print(stats.mean, stats.std)" : 'print("tconfint:", stats.tconfint_mean())',
+      ]
+    case "sm-acf-pacf":
+      return [
+        "import numpy as np",
+        "from statsmodels.tsa.stattools import acf, pacf",
+        "",
+        "series = np.array([12, 13, 15, 18, 17, 19, 21, 20, 22, 24], dtype=float)",
+        mode === "workflow"
+          ? "print(acf(series, nlags=4))\nprint(pacf(series, nlags=4))"
+          : 'print("lags checked:", 4)',
+      ]
+    case "sm-seasonal-decompose":
+      return [
+        "import pandas as pd",
+        "from statsmodels.tsa.seasonal import seasonal_decompose",
+        "",
+        'index = pd.date_range("2026-01-01", periods=12, freq="M")',
+        "series = pd.Series([10, 12, 11, 15, 18, 17, 20, 23, 21, 25, 27, 26], index=index)",
+        'result = seasonal_decompose(series, model="additive", period=4)',
+        mode === "workflow" ? "print(result.trend.dropna().head())" : 'print("components:", ["trend", "seasonal", "resid"])',
+      ]
+    case "sm-arima":
+      return [
+        "import pandas as pd",
+        "from statsmodels.tsa.arima.model import ARIMA",
+        "",
+        "series = pd.Series([120, 124, 128, 130, 133, 137, 141, 144, 149, 153], dtype=float)",
+        'model = ARIMA(series, order=(1, 1, 1)).fit()',
+        mode === "workflow" ? "print(model.forecast(3))" : 'print("aic:", round(model.aic, 3))',
+      ]
+    case "sm-qqplot":
+      return [
+        "import numpy as np",
+        "import statsmodels.api as sm",
+        "",
+        "values = np.array([12, 14, 15, 16, 18, 20, 22], dtype=float)",
+        "fig = sm.qqplot(values, line='45')",
+        mode === "workflow" ? "print(fig)" : 'print("qqplot ready")',
+      ]
+    default:
+      return [
+        "import pandas as pd",
+        "import statsmodels.api as sm",
+        "",
+        "df = pd.DataFrame({",
+        '    "sales": [120, 138, 146, 160, 174],',
+        '    "ad_cost": [20, 22, 25, 26, 29],',
+        "})",
+        'X = sm.add_constant(df[["ad_cost"]])',
+        'y = df["sales"]',
+        "model = sm.OLS(y, X).fit()",
+        mode === "workflow" ? "print(model.summary())" : 'print("done")',
+      ]
+  }
+}
+
+function getSklearnWorkflowLines(command, mode = "workflow") {
+  switch (command.id) {
+    case "sk-train-test-split":
+      return [
+        "import numpy as np",
+        "from sklearn.model_selection import train_test_split",
+        "",
+        "X = np.array([[1, 20], [2, 22], [3, 25], [4, 28], [5, 30], [6, 35]], dtype=float)",
+        "y = np.array([0, 0, 0, 1, 1, 1])",
+        "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)",
+        mode === "workflow" ? "print(X_train.shape, X_test.shape)" : 'print("y_test:", y_test)',
+      ]
+    case "sk-standardscaler":
+    case "sk-minmaxscaler":
+    case "sk-simpleimputer":
+      return [
+        "import numpy as np",
+        "from sklearn.preprocessing import StandardScaler, MinMaxScaler",
+        "from sklearn.impute import SimpleImputer",
+        "",
+        "X = np.array([[1.0, 20.0], [2.0, 22.0], [3.0, np.nan], [4.0, 28.0]])",
+        command.id === "sk-standardscaler"
+          ? "print(StandardScaler().fit_transform(X))"
+          : command.id === "sk-minmaxscaler"
+            ? "print(MinMaxScaler().fit_transform(X))"
+            : "print(SimpleImputer(strategy='median').fit_transform(X))",
+      ]
+    case "sk-onehotencoder":
+      return [
+        "from sklearn.preprocessing import OneHotEncoder",
+        "",
+        'X = [["Online"], ["Store"], ["Online"], ["Partner"]]',
+        "encoder = OneHotEncoder(sparse_output=False, handle_unknown='ignore')",
+        mode === "workflow" ? "print(encoder.fit_transform(X))" : 'print("categories:", encoder.fit(X).categories_)',
+      ]
+    case "sk-columntransformer":
+      return [
+        "import pandas as pd",
+        "from sklearn.compose import ColumnTransformer",
+        "from sklearn.preprocessing import StandardScaler, OneHotEncoder",
+        "",
+        "df = pd.DataFrame({",
+        '    "sales": [120, 138, 146, 160],',
+        '    "channel": ["Online", "Store", "Online", "Partner"],',
+        "})",
+        "preprocess = ColumnTransformer([",
+        '    ("num", StandardScaler(), ["sales"]),',
+        '    ("cat", OneHotEncoder(handle_unknown="ignore"), ["channel"]),',
+        "])",
+        mode === "workflow" ? "print(preprocess.fit_transform(df))" : 'print("transformer ready")',
+      ]
+    case "sk-pipeline":
+      return [
+        "import numpy as np",
+        "from sklearn.pipeline import Pipeline",
+        "from sklearn.preprocessing import StandardScaler",
+        "from sklearn.linear_model import LogisticRegression",
+        "",
+        "X = np.array([[1, 20], [2, 22], [3, 25], [4, 28], [5, 30], [6, 35]], dtype=float)",
+        "y = np.array([0, 0, 0, 1, 1, 1])",
+        "pipe = Pipeline([",
+        '    ("scaler", StandardScaler()),',
+        '    ("model", LogisticRegression()),',
+        "])",
+        mode === "workflow" ? "print(pipe.fit(X, y).predict(X[:2]))" : 'print("steps:", pipe.named_steps.keys())',
+      ]
+    case "sk-linear-regression":
+    case "sk-logistic-regression":
+    case "sk-random-forest":
+    case "sk-kmeans":
+    case "sk-pca":
+      return [
+        "import numpy as np",
+        "from sklearn.linear_model import LinearRegression, LogisticRegression",
+        "from sklearn.ensemble import RandomForestClassifier",
+        "from sklearn.cluster import KMeans",
+        "from sklearn.decomposition import PCA",
+        "",
+        "X = np.array([[1, 20], [2, 22], [3, 25], [4, 28], [5, 30], [6, 35]], dtype=float)",
+        "y_reg = np.array([120, 138, 146, 160, 174, 182], dtype=float)",
+        "y_clf = np.array([0, 0, 0, 1, 1, 1])",
+        command.id === "sk-linear-regression"
+          ? "model = LinearRegression().fit(X, y_reg)\nprint(model.predict(X[:2]))"
+          : command.id === "sk-logistic-regression"
+            ? "model = LogisticRegression().fit(X, y_clf)\nprint(model.predict_proba(X[:2]))"
+            : command.id === "sk-random-forest"
+              ? "model = RandomForestClassifier(n_estimators=100, random_state=42).fit(X, y_clf)\nprint(model.feature_importances_)"
+              : command.id === "sk-kmeans"
+                ? "model = KMeans(n_clusters=2, random_state=42, n_init='auto').fit(X)\nprint(model.labels_)"
+                : "model = PCA(n_components=2).fit(X)\nprint(model.explained_variance_ratio_)",
+      ]
+    case "sk-cross-val-score":
+    case "sk-grid-search":
+      return [
+        "import numpy as np",
+        "from sklearn.linear_model import LogisticRegression",
+        "from sklearn.model_selection import cross_val_score, GridSearchCV",
+        "",
+        "X = np.array([[1, 20], [2, 22], [3, 25], [4, 28], [5, 30], [6, 35]], dtype=float)",
+        "y = np.array([0, 0, 0, 1, 1, 1])",
+        command.id === "sk-cross-val-score"
+          ? "model = LogisticRegression()\nprint(cross_val_score(model, X, y, cv=3))"
+          : "model = LogisticRegression(max_iter=1000)\nsearch = GridSearchCV(model, {'C': [0.1, 1, 10]}, cv=3)\nprint(search.fit(X, y).best_params_)",
+      ]
+    case "sk-confusion-matrix":
+    case "sk-classification-report":
+    case "sk-roc-auc":
+    case "sk-silhouette-score":
+      return [
+        "import numpy as np",
+        "from sklearn.metrics import confusion_matrix, classification_report, roc_auc_score, silhouette_score",
+        "",
+        "y_true = np.array([0, 0, 1, 1, 1])",
+        "y_pred = np.array([0, 1, 1, 1, 0])",
+        "scores = np.array([0.12, 0.63, 0.74, 0.88, 0.44])",
+        "X = np.array([[1, 20], [2, 22], [3, 25], [4, 28], [5, 30]], dtype=float)",
+        "labels = np.array([0, 0, 1, 1, 1])",
+        command.id === "sk-confusion-matrix"
+          ? "print(confusion_matrix(y_true, y_pred))"
+          : command.id === "sk-classification-report"
+            ? "print(classification_report(y_true, y_pred))"
+            : command.id === "sk-roc-auc"
+              ? "print(roc_auc_score(y_true, scores))"
+              : "print(silhouette_score(X, labels))",
+      ]
+    default:
+      return [
+        "import numpy as np",
+        "",
+        "X = np.array([[1, 20], [2, 22], [3, 25], [4, 28]], dtype=float)",
+        "y = np.array([0, 0, 1, 1])",
+        mode === "workflow" ? "print(X.shape, y.shape)" : 'print("dataset ready")',
+      ]
+  }
+}
+
+function getKerasWorkflowLines(command, mode = "workflow") {
+  switch (command.id) {
+    case "keras-sequential":
+    case "keras-dense":
+    case "keras-dropout":
+    case "keras-conv2d":
+    case "keras-embedding":
+    case "keras-lstm":
+      return [
+        "import numpy as np",
+        "import keras",
+        "",
+        "model = keras.Sequential()",
+        command.id === "keras-sequential"
+          ? 'model = keras.Sequential([keras.layers.Dense(16, activation="relu", input_shape=(4,)), keras.layers.Dense(1)])'
+          : command.id === "keras-dense"
+            ? 'model.add(keras.layers.Dense(16, activation="relu", input_shape=(4,)))\nmodel.add(keras.layers.Dense(1))'
+            : command.id === "keras-dropout"
+              ? 'model = keras.Sequential([keras.layers.Dense(16, activation="relu", input_shape=(4,)), keras.layers.Dropout(0.3), keras.layers.Dense(1)])'
+              : command.id === "keras-conv2d"
+                ? 'model = keras.Sequential([keras.layers.Conv2D(16, 3, activation="relu", input_shape=(28, 28, 1)), keras.layers.Flatten(), keras.layers.Dense(10, activation="softmax")])'
+                : command.id === "keras-embedding"
+                  ? 'model = keras.Sequential([keras.layers.Embedding(input_dim=5000, output_dim=64, input_length=20), keras.layers.GlobalAveragePooling1D(), keras.layers.Dense(1, activation="sigmoid")])'
+                  : 'model = keras.Sequential([keras.layers.Embedding(input_dim=5000, output_dim=64), keras.layers.LSTM(32), keras.layers.Dense(1, activation="sigmoid")])',
+        mode === "workflow" ? "model.summary()" : 'print("layers:", len(model.layers))',
+      ]
+    case "keras-compile":
+    case "keras-fit":
+    case "keras-evaluate":
+    case "keras-predict":
+      return [
+        "import numpy as np",
+        "import keras",
+        "",
+        "X = np.random.default_rng(7).normal(size=(24, 4)).astype('float32')",
+        "y = (X.sum(axis=1) > 0).astype('float32')",
+        'model = keras.Sequential([keras.layers.Dense(16, activation="relu", input_shape=(4,)), keras.layers.Dense(1, activation="sigmoid")])',
+        'model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])',
+        command.id === "keras-compile"
+          ? 'print("compiled")'
+          : command.id === "keras-fit"
+            ? "history = model.fit(X, y, epochs=3, batch_size=8, verbose=0)\nprint(history.history.keys())"
+            : command.id === "keras-evaluate"
+              ? "model.fit(X, y, epochs=2, batch_size=8, verbose=0)\nprint(model.evaluate(X, y, verbose=0))"
+              : "model.fit(X, y, epochs=2, batch_size=8, verbose=0)\nprint(model.predict(X[:2], verbose=0))",
+      ]
+    case "keras-earlystopping":
+    case "keras-modelcheckpoint":
+      return [
+        "import keras",
+        "",
+        command.id === "keras-earlystopping"
+          ? 'callback = keras.callbacks.EarlyStopping(monitor="val_loss", patience=3, restore_best_weights=True)\nprint(callback)'
+          : 'callback = keras.callbacks.ModelCheckpoint("best.keras", monitor="val_loss", save_best_only=True)\nprint(callback)',
+      ]
+    default:
+      return [
+        "import keras",
+        "import numpy as np",
+        "",
+        "X = np.random.default_rng(7).normal(size=(8, 4)).astype('float32')",
+        "y = (X.sum(axis=1) > 0).astype('float32')",
+        mode === "workflow" ? "print(X.shape, y.shape)" : 'print("tensor ready")',
+      ]
+  }
+}
+
+function getGensimWorkflowLines(command, mode = "workflow") {
+  switch (command.id) {
+    case "gen-dictionary":
+    case "gen-doc2bow":
+    case "gen-tfidfmodel":
+    case "gen-ldamodel":
+    case "gen-ldamodel-print-topics":
+      return [
+        "from gensim import corpora, models",
+        "",
+        'texts = [["data", "science", "python"], ["topic", "model", "text"], ["python", "machine", "learning"]]',
+        "dictionary = corpora.Dictionary(texts)",
+        "corpus = [dictionary.doc2bow(text) for text in texts]",
+        command.id === "gen-dictionary"
+          ? "print(dictionary.token2id)"
+          : command.id === "gen-doc2bow"
+            ? 'print(dictionary.doc2bow(["python", "text", "python"]))'
+            : command.id === "gen-tfidfmodel"
+              ? "tfidf = models.TfidfModel(corpus)\nprint(tfidf[corpus[0]])"
+              : command.id === "gen-ldamodel"
+                ? "lda = models.LdaModel(corpus=corpus, id2word=dictionary, num_topics=2, passes=10, random_state=7)\nprint(lda.get_document_topics(corpus[0]))"
+                : "lda = models.LdaModel(corpus=corpus, id2word=dictionary, num_topics=2, passes=10, random_state=7)\nprint(lda.print_topics())",
+      ]
+    case "gen-word2vec":
+    case "gen-keyedvectors-most-similar":
+      return [
+        "from gensim.models import Word2Vec",
+        "",
+        'sentences = [["data", "science"], ["machine", "learning"], ["deep", "learning"], ["science", "model"]]',
+        "model = Word2Vec(sentences=sentences, vector_size=20, window=2, min_count=1, workers=1, epochs=50)",
+        command.id === "gen-word2vec"
+          ? 'print(model.wv["science"][:5])'
+          : 'print(model.wv.most_similar("learning", topn=3))',
+      ]
+    case "gen-similarities-matrixsimilarity":
+      return [
+        "from gensim import corpora, models, similarities",
+        "",
+        'texts = [["data", "science", "python"], ["topic", "model", "text"], ["python", "machine", "learning"]]',
+        "dictionary = corpora.Dictionary(texts)",
+        "corpus = [dictionary.doc2bow(text) for text in texts]",
+        "tfidf = models.TfidfModel(corpus)",
+        "index = similarities.MatrixSimilarity(tfidf[corpus])",
+        'query = dictionary.doc2bow(["python", "science"])',
+        mode === "workflow" ? "print(index[tfidf[query]])" : 'print("docs indexed:", len(corpus))',
+      ]
+    case "gen-phrases":
+      return [
+        "from gensim.models import Phrases",
+        "",
+        'sentences = [["new", "york", "city"], ["machine", "learning", "model"], ["new", "york", "times"]]',
+        "phrases = Phrases(sentences, min_count=1, threshold=1)",
+        mode === "workflow" ? "print(list(phrases[sentences]))" : 'print("phrase model ready")',
+      ]
+    default:
+      return [
+        "from gensim import corpora",
+        "",
+        'texts = [["data", "science"], ["machine", "learning"]]',
+        "dictionary = corpora.Dictionary(texts)",
+        mode === "workflow" ? "print(dictionary.token2id)" : 'print("tokens:", len(dictionary))',
+      ]
+  }
+}
+
 function buildWorkflowExample(command) {
   const syntax = normalizeSyntaxExpression(command)
 
@@ -2014,6 +3060,38 @@ function buildWorkflowExample(command) {
       "科研计算示例",
       lines(getScipyWorkflowLines(command, "workflow")),
       "先用小规模向量验证统计量、参数或返回对象的结构，再放到正式样本上。"
+    )
+  }
+
+  if (command.library === "statsmodels") {
+    return createExample(
+      "统计建模示例",
+      lines(getStatsmodelsWorkflowLines(command, "workflow")),
+      "先把设计矩阵、模型对象和结果对象分清楚，再解释系数和检验结果。"
+    )
+  }
+
+  if (command.library === "sklearn") {
+    return createExample(
+      "机器学习流程示例",
+      lines(getSklearnWorkflowLines(command, "workflow")),
+      "理解 scikit-learn 时，最好把数据切分、预处理、训练和评估当成一整条流程来记。"
+    )
+  }
+
+  if (command.library === "keras") {
+    return createExample(
+      "神经网络示例",
+      lines(getKerasWorkflowLines(command, "workflow")),
+      "Keras 最重要的是看清层堆叠、compile 配置和训练输入形状。"
+    )
+  }
+
+  if (command.library === "gensim") {
+    return createExample(
+      "文本主题示例",
+      lines(getGensimWorkflowLines(command, "workflow")),
+      "把词典、语料、模型之间的顺序理解清楚，会比单背命令更有用。"
     )
   }
 
@@ -2094,6 +3172,38 @@ function buildValidationExample(command) {
       "结果解释校验示例",
       lines(getScipyWorkflowLines(command, "validation")),
       "scipy 很多函数返回命名结果对象或多元组，正式使用前最好先看清返回结构。"
+    )
+  }
+
+  if (command.library === "statsmodels") {
+    return createExample(
+      "结果解释校验示例",
+      lines(getStatsmodelsWorkflowLines(command, "validation")),
+      "statsmodels 的重点往往不在拟合完成，而在结果对象里每一项统计量如何解释。"
+    )
+  }
+
+  if (command.library === "sklearn") {
+    return createExample(
+      "结果检查示例",
+      lines(getSklearnWorkflowLines(command, "validation")),
+      "机器学习命令最好顺手检查数据形状、输出类型和评估口径。"
+    )
+  }
+
+  if (command.library === "keras") {
+    return createExample(
+      "训练检查示例",
+      lines(getKerasWorkflowLines(command, "validation")),
+      "Keras 里最容易出错的是形状和训练配置，所以验证示例会重点放在这些地方。"
+    )
+  }
+
+  if (command.library === "gensim") {
+    return createExample(
+      "语料检查示例",
+      lines(getGensimWorkflowLines(command, "validation")),
+      "文本库的调试重点通常是字典规模、语料结构和模型输出是否符合预期。"
     )
   }
 
@@ -2481,11 +3591,279 @@ function buildExamples(command) {
 }
 
 function buildVisualDemoSpec(command) {
-  if (!["seaborn", "matplotlib"].includes(command.library)) {
-    return null
+  const id = command.id
+
+  if (command.library === "pandas") {
+    const definitions = [
+      {
+        test: /read|to_|excel|csv|json|parquet/.test(id),
+        type: "tableflow",
+        title: "表格读写示意",
+        note: "用表格结构帮助理解数据从文件到 DataFrame，再到导出的流转路径。",
+      },
+      {
+        test: /merge|concat|join/.test(id),
+        type: "joinflow",
+        title: "多表连接示意",
+        note: "适合理解主键对齐、左右表补列和结果放大的风险点。",
+      },
+      {
+        test: /melt|pivot|wide|stack|unstack|explode|reindex/.test(id),
+        type: "reshapeflow",
+        title: "形状变化示意",
+        note: "帮助记住宽表、长表和层级结构之间的转换关系。",
+      },
+      {
+        test: /groupby|pivot-table|crosstab|rank|cum/.test(id),
+        type: "summarycard",
+        title: "汇总统计示意",
+        note: "适合理解分组聚合、透视和累计类命令的输出结构。",
+      },
+      {
+        test: /to-datetime|resample|rolling|shift|pct-change|dt/.test(id),
+        type: "timeline",
+        title: "时间序列示意",
+        note: "帮助记住时间列转换、重采样和滚动窗口的结果形态。",
+      },
+    ]
+
+    const matched = definitions.find((item) => item.test)
+    return matched
+      ? { type: matched.type, title: matched.title, note: matched.note }
+      : {
+          type: "tableflow",
+          title: "表格结果示意",
+          note: "用简化表格来帮助理解 DataFrame 类命令通常会产出什么结构。",
+        }
   }
 
-  const id = command.id
+  if (command.library === "numpy") {
+    const definitions = [
+      {
+        test: /meshgrid|reshape|transpose|stack|column-stack|vstack|hstack|split|take/.test(id),
+        type: "arraygrid",
+        title: "数组形状示意",
+        note: "重点帮助理解维度、轴和重排后结果的形状变化。",
+      },
+      {
+        test: /linalg|dot|einsum|cov|corrcoef/.test(id),
+        type: "matrixcard",
+        title: "矩阵运算示意",
+        note: "适合记住矩阵乘法、求解和协方差这类二维结构计算。",
+      },
+      {
+        test: /where|select|digitize|searchsorted|isclose|logical|any|all/.test(id),
+        type: "decisionflow",
+        title: "条件映射示意",
+        note: "帮助记住条件分支、分箱和布尔判断如何作用到整组数组上。",
+      },
+    ]
+
+    const matched = definitions.find((item) => item.test)
+    return matched
+      ? { type: matched.type, title: matched.title, note: matched.note }
+      : {
+          type: "arrayrow",
+          title: "数组结果示意",
+          note: "用小数组和索引结构帮助理解 numpy 的向量化结果。",
+        }
+  }
+
+  if (command.library === "scipy") {
+    const definitions = [
+      {
+        test: /^sp-stats-/.test(id),
+        type: "statscard",
+        title: "统计检验示意",
+        note: "强调统计量、p 值、假设方向和样本分组之间的关系。",
+      },
+      {
+        test: /^sp-interpolate-/.test(id),
+        type: "interpolatecurve",
+        title: "插值拟合示意",
+        note: "帮助理解离散点、平滑曲线和中间插值点之间的关系。",
+      },
+      {
+        test: /^sp-signal-/.test(id),
+        type: "signalwave",
+        title: "信号处理示意",
+        note: "用原始序列与平滑/峰值结果的对比来帮助记忆。",
+      },
+      {
+        test: /^sp-optimize-/.test(id),
+        type: "optimizepath",
+        title: "优化求解示意",
+        note: "适合理解目标函数、参数更新和最优点搜索的过程。",
+      },
+      {
+        test: /^sp-spatial-|^sp-sparse-/.test(id),
+        type: "matrixcard",
+        title: "距离与矩阵示意",
+        note: "帮助理解距离矩阵、稀疏矩阵和结构化数值对象的输出形态。",
+      },
+      {
+        test: /^sp-special-/.test(id),
+        type: "line",
+        title: "函数变换示意",
+        note: "适合理解输入数值经过特殊函数映射后的变化趋势。",
+      },
+    ]
+
+    const matched = definitions.find((item) => item.test)
+    return matched
+      ? { type: matched.type, title: matched.title, note: matched.note }
+      : {
+          type: "statscard",
+          title: "科学计算示意",
+          note: "用结果结构示意帮助理解 scipy 命令更偏算法与统计推断。",
+        }
+  }
+
+  if (command.library === "statsmodels") {
+    const definitions = [
+      {
+        test: /arima|seasonal|acf|pacf/.test(id),
+        type: "forecastpanel",
+        title: "时间序列建模示意",
+        note: "帮助理解趋势、季节性、自相关和预测输出之间的关系。",
+      },
+      {
+        test: /summary|anova|ols|logit|formula|constant/.test(id),
+        type: "modelsummary",
+        title: "统计建模结果示意",
+        note: "适合记住设计矩阵、系数、显著性和 summary 输出的结构。",
+      },
+      {
+        test: /qqplot/.test(id),
+        type: "distribution",
+        title: "分布诊断示意",
+        note: "帮助理解样本分布与理论分布的对照方式。",
+      },
+    ]
+
+    const matched = definitions.find((item) => item.test)
+    return matched
+      ? { type: matched.type, title: matched.title, note: matched.note }
+      : {
+          type: "modelsummary",
+          title: "统计模型示意",
+          note: "把结果表、系数和诊断信息可视化，能更快理解 statsmodels 的输出重点。",
+        }
+  }
+
+  if (command.library === "sklearn") {
+    const definitions = [
+      {
+        test: /train-test-split/.test(id),
+        type: "splitview",
+        title: "训练/测试切分示意",
+        note: "帮助记住样本被拆成训练集和测试集后的边界。",
+      },
+      {
+        test: /scaler|encoder|imputer|columntransformer/.test(id),
+        type: "pipelineflow",
+        title: "预处理流程示意",
+        note: "适合理解缺失值、缩放和编码步骤如何串在一起。",
+      },
+      {
+        test: /pipeline|cross-val|grid-search/.test(id),
+        type: "pipelineflow",
+        title: "建模流水线示意",
+        note: "帮助理解预处理、模型和验证是如何通过 Pipeline 串联的。",
+      },
+      {
+        test: /confusion|classification-report|roc-auc/.test(id),
+        type: "confusioncard",
+        title: "分类评估示意",
+        note: "适合理解真阳性、假阳性和阈值型分类指标的含义。",
+      },
+      {
+        test: /kmeans|silhouette/.test(id),
+        type: "clusterdemo",
+        title: "聚类结构示意",
+        note: "帮助理解样本如何被划分为不同簇，以及聚类质量如何被衡量。",
+      },
+      {
+        test: /pca/.test(id),
+        type: "arraygrid",
+        title: "降维结果示意",
+        note: "适合理解高维特征被投影到更少维度后的结果结构。",
+      },
+      {
+        test: /linear-regression|logistic-regression|random-forest/.test(id),
+        type: "modelsummary",
+        title: "模型训练示意",
+        note: "帮助理解特征输入、模型拟合和预测输出之间的关系。",
+      },
+    ]
+
+    const matched = definitions.find((item) => item.test)
+    return matched
+      ? { type: matched.type, title: matched.title, note: matched.note }
+      : {
+          type: "pipelineflow",
+          title: "机器学习流程示意",
+          note: "scikit-learn 最适合放在“数据 -> 预处理 -> 模型 -> 评估”这条主线里理解。",
+        }
+  }
+
+  if (command.library === "keras") {
+    const definitions = [
+      {
+        test: /fit|evaluate|predict|compile|earlystopping|modelcheckpoint/.test(id),
+        type: "trainingcurve",
+        title: "训练过程示意",
+        note: "帮助理解 compile、fit、回调和评估在训练阶段各自负责什么。",
+      },
+      {
+        test: /conv2d|embedding|lstm|dense|dropout|sequential/.test(id),
+        type: "networkstack",
+        title: "神经网络结构示意",
+        note: "适合记住层堆叠、输入形状和输出形状如何逐层流动。",
+      },
+    ]
+
+    const matched = definitions.find((item) => item.test)
+    return matched
+      ? { type: matched.type, title: matched.title, note: matched.note }
+      : {
+          type: "networkstack",
+          title: "深度学习结构示意",
+          note: "把层结构和训练流程放在一起理解，会更容易掌握 keras 的核心命令。",
+        }
+  }
+
+  if (command.library === "gensim") {
+    const definitions = [
+      {
+        test: /dictionary|doc2bow|tfidf/.test(id),
+        type: "tokengrid",
+        title: "语料表示示意",
+        note: "帮助理解原始 token、词典 id 和稀疏词袋之间的转换关系。",
+      },
+      {
+        test: /lda/.test(id),
+        type: "topicmap",
+        title: "主题模型示意",
+        note: "适合理解文档、主题和高频词之间的分布关系。",
+      },
+      {
+        test: /word2vec|similar|phrases/.test(id),
+        type: "semanticspace",
+        title: "语义空间示意",
+        note: "帮助理解词向量、短语和相似词检索在语义空间里的含义。",
+      },
+    ]
+
+    const matched = definitions.find((item) => item.test)
+    return matched
+      ? { type: matched.type, title: matched.title, note: matched.note }
+      : {
+          type: "tokengrid",
+          title: "文本处理示意",
+          note: "用语料和主题结构示意帮助理解 gensim 的工作方式。",
+        }
+  }
 
   const definitions = [
     {

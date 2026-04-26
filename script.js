@@ -64,6 +64,422 @@ function normalize(text) {
 
 function buildVisualPreviewSvg(type) {
   switch (type) {
+    case "tableflow":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(30 40)">
+            <rect x="0" y="14" width="88" height="64" rx="14" fill="#ffffff" stroke="#d5e1e5" />
+            <rect x="0" y="14" width="88" height="18" rx="14" fill="#d7ece8" />
+            <line x1="0" y1="32" x2="88" y2="32" stroke="#d5e1e5" />
+            <line x1="28" y1="14" x2="28" y2="78" stroke="#d5e1e5" />
+            <line x1="58" y1="14" x2="58" y2="78" stroke="#d5e1e5" />
+            <line x1="0" y1="50" x2="88" y2="50" stroke="#d5e1e5" />
+            <path d="M104 46 L142 46" stroke="#1f6f78" stroke-width="5" stroke-linecap="round" />
+            <path d="M136 34 L150 46 L136 58" fill="none" stroke="#1f6f78" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+            <rect x="166" y="0" width="104" height="92" rx="16" fill="#ffffff" stroke="#d5e1e5" />
+            <rect x="166" y="0" width="104" height="20" rx="16" fill="#e9d2b7" />
+            <line x1="166" y1="20" x2="270" y2="20" stroke="#d5e1e5" />
+            <line x1="166" y1="44" x2="270" y2="44" stroke="#d5e1e5" />
+            <line x1="166" y1="68" x2="270" y2="68" stroke="#d5e1e5" />
+            <line x1="198" y1="0" x2="198" y2="92" stroke="#d5e1e5" />
+            <line x1="230" y1="0" x2="230" y2="92" stroke="#d5e1e5" />
+          </g>
+        </svg>
+      `
+    case "joinflow":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(28 34)">
+            <rect x="0" y="22" width="84" height="78" rx="14" fill="#ffffff" stroke="#d5e1e5" />
+            <rect x="0" y="22" width="84" height="18" rx="14" fill="#d7ece8" />
+            <rect x="56" y="4" width="84" height="78" rx="14" fill="#ffffff" stroke="#d5e1e5" />
+            <rect x="56" y="4" width="84" height="18" rx="14" fill="#efc58c" />
+            <path d="M162 44 L196 44" stroke="#1f6f78" stroke-width="5" stroke-linecap="round" />
+            <path d="M190 32 L204 44 L190 56" fill="none" stroke="#1f6f78" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+            <rect x="214" y="14" width="78" height="86" rx="16" fill="#ffffff" stroke="#d5e1e5" />
+            <rect x="214" y="14" width="78" height="18" rx="16" fill="#cfe8e2" />
+            <circle cx="196" cy="44" r="18" fill="rgba(31,111,120,0.12)" stroke="#1f6f78" stroke-width="3" />
+          </g>
+        </svg>
+      `
+    case "reshapeflow":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(38 36)">
+            <rect x="0" y="18" width="132" height="62" rx="14" fill="#ffffff" stroke="#d5e1e5" />
+            <line x1="0" y1="18" x2="132" y2="18" stroke="#d5e1e5" />
+            <line x1="44" y1="18" x2="44" y2="80" stroke="#d5e1e5" />
+            <line x1="88" y1="18" x2="88" y2="80" stroke="#d5e1e5" />
+            <line x1="0" y1="40" x2="132" y2="40" stroke="#d5e1e5" />
+            <line x1="0" y1="60" x2="132" y2="60" stroke="#d5e1e5" />
+            <path d="M154 50 L186 50" stroke="#b9793e" stroke-width="5" stroke-linecap="round" />
+            <path d="M180 38 L194 50 L180 62" fill="none" stroke="#b9793e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+            <rect x="202" y="0" width="44" height="110" rx="14" fill="#ffffff" stroke="#d5e1e5" />
+            <line x1="202" y1="22" x2="246" y2="22" stroke="#d5e1e5" />
+            <line x1="202" y1="44" x2="246" y2="44" stroke="#d5e1e5" />
+            <line x1="202" y1="66" x2="246" y2="66" stroke="#d5e1e5" />
+            <line x1="202" y1="88" x2="246" y2="88" stroke="#d5e1e5" />
+          </g>
+        </svg>
+      `
+    case "summarycard":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(34 38)">
+            <rect x="0" y="0" width="72" height="48" rx="16" fill="#d7ece8" />
+            <rect x="86" y="0" width="72" height="48" rx="16" fill="#efc58c" />
+            <rect x="172" y="0" width="72" height="48" rx="16" fill="#cfe8e2" />
+            <rect x="0" y="62" width="244" height="54" rx="16" fill="#ffffff" stroke="#d5e1e5" />
+            <path d="M16 98 C40 88, 70 76, 98 84 S148 106, 180 90 S218 70, 228 74" fill="none" stroke="#1f6f78" stroke-width="4" />
+          </g>
+        </svg>
+      `
+    case "timeline":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(32 42)">
+            <line x1="0" y1="84" x2="248" y2="84" stroke="#cad7dc" stroke-width="2" />
+            <g fill="#1f6f78">
+              <circle cx="20" cy="84" r="6" />
+              <circle cx="70" cy="60" r="6" />
+              <circle cx="120" cy="68" r="6" />
+              <circle cx="170" cy="36" r="6" />
+              <circle cx="220" cy="44" r="6" />
+            </g>
+            <path d="M20 84 C40 74, 56 62, 70 60 S104 66, 120 68 S154 44, 170 36 S206 42, 220 44" fill="none" stroke="#1f6f78" stroke-width="4" />
+            <path d="M20 84 C52 74, 88 70, 120 68 S188 52, 220 44" fill="none" stroke="#b9793e" stroke-width="3" stroke-dasharray="8 6" />
+          </g>
+        </svg>
+      `
+    case "arrayrow":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(34 70)">
+            <rect x="0" y="0" width="44" height="36" rx="10" fill="#d7ece8" />
+            <rect x="50" y="0" width="44" height="36" rx="10" fill="#cfe8e2" />
+            <rect x="100" y="0" width="44" height="36" rx="10" fill="#efc58c" />
+            <rect x="150" y="0" width="44" height="36" rx="10" fill="#b7ddd5" />
+            <rect x="200" y="0" width="44" height="36" rx="10" fill="#d7ece8" />
+          </g>
+        </svg>
+      `
+    case "arraygrid":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(62 34)" fill="#ffffff" stroke="#d5e1e5">
+            <rect x="0" y="0" width="44" height="34" rx="10" />
+            <rect x="50" y="0" width="44" height="34" rx="10" fill="#d7ece8" />
+            <rect x="100" y="0" width="44" height="34" rx="10" />
+            <rect x="0" y="40" width="44" height="34" rx="10" fill="#efc58c" />
+            <rect x="50" y="40" width="44" height="34" rx="10" />
+            <rect x="100" y="40" width="44" height="34" rx="10" fill="#cfe8e2" />
+            <rect x="0" y="80" width="44" height="34" rx="10" />
+            <rect x="50" y="80" width="44" height="34" rx="10" fill="#d7ece8" />
+            <rect x="100" y="80" width="44" height="34" rx="10" />
+          </g>
+          <path d="M232 56 L262 56" stroke="#1f6f78" stroke-width="5" stroke-linecap="round" />
+          <path d="M256 44 L270 56 L256 68" fill="none" stroke="#1f6f78" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      `
+    case "matrixcard":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(44 42)">
+            <rect x="0" y="0" width="78" height="78" rx="14" fill="#ffffff" stroke="#d5e1e5" />
+            <rect x="126" y="0" width="78" height="78" rx="14" fill="#ffffff" stroke="#d5e1e5" />
+            <path d="M92 38 L112 38" stroke="#b9793e" stroke-width="5" stroke-linecap="round" />
+            <path d="M106 26 L120 38 L106 50" fill="none" stroke="#b9793e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+            <rect x="62" y="92" width="140" height="22" rx="11" fill="#d7ece8" />
+          </g>
+        </svg>
+      `
+    case "decisionflow":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(40 38)">
+            <path d="M76 8 L124 40 L76 72 L28 40 Z" fill="#d7ece8" />
+            <path d="M164 8 L212 40 L164 72 L116 40 Z" fill="#efc58c" />
+            <path d="M252 8 L300 40 L252 72 L204 40 Z" transform="translate(-20 0)" fill="#cfe8e2" />
+            <path d="M124 40 H146" stroke="#1f6f78" stroke-width="4" />
+            <path d="M212 40 H234" stroke="#1f6f78" stroke-width="4" />
+            <rect x="32" y="90" width="180" height="24" rx="12" fill="#ffffff" stroke="#d5e1e5" />
+          </g>
+        </svg>
+      `
+    case "statscard":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(36 36)">
+            <rect x="0" y="0" width="70" height="44" rx="16" fill="#d7ece8" />
+            <rect x="82" y="0" width="70" height="44" rx="16" fill="#efc58c" />
+            <rect x="164" y="0" width="70" height="44" rx="16" fill="#cfe8e2" />
+            <rect x="0" y="58" width="234" height="54" rx="18" fill="#ffffff" stroke="#d5e1e5" />
+            <path d="M22 94 C42 82, 54 70, 74 68 S108 84, 124 80 S150 58, 186 56" fill="none" stroke="#1f6f78" stroke-width="4" />
+          </g>
+        </svg>
+      `
+    case "interpolatecurve":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(38 38)">
+            <path d="M10 98 C42 86, 66 38, 92 44 S148 86, 178 70 S212 24, 232 20" fill="none" stroke="#1f6f78" stroke-width="4" />
+            <path d="M10 98 L44 80 L86 46 L140 82 L196 48 L232 20" fill="none" stroke="#b9793e" stroke-width="3" stroke-dasharray="6 6" />
+            <g fill="#b9793e">
+              <circle cx="10" cy="98" r="5" />
+              <circle cx="44" cy="80" r="5" />
+              <circle cx="86" cy="46" r="5" />
+              <circle cx="140" cy="82" r="5" />
+              <circle cx="196" cy="48" r="5" />
+              <circle cx="232" cy="20" r="5" />
+            </g>
+          </g>
+        </svg>
+      `
+    case "signalwave":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(34 46)">
+            <path d="M0 64 C18 42, 36 88, 54 36 S90 26, 108 60 S144 86, 162 46 S198 30, 216 58" fill="none" stroke="#b9793e" stroke-width="3" stroke-dasharray="7 6" />
+            <path d="M0 60 C18 52, 36 64, 54 50 S90 42, 108 52 S144 70, 162 56 S198 44, 216 50" fill="none" stroke="#1f6f78" stroke-width="4" />
+            <g fill="#1f6f78">
+              <circle cx="54" cy="50" r="5" />
+              <circle cx="108" cy="52" r="5" />
+              <circle cx="162" cy="56" r="5" />
+            </g>
+          </g>
+        </svg>
+      `
+    case "optimizepath":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(38 32)">
+            <path d="M20 18 C92 12, 144 74, 212 114" fill="none" stroke="#d5e1e5" stroke-width="18" stroke-linecap="round" opacity="0.6" />
+            <path d="M28 22 C72 28, 106 54, 136 76 S182 104, 210 110" fill="none" stroke="#1f6f78" stroke-width="4" stroke-dasharray="7 6" />
+            <g fill="#b9793e">
+              <circle cx="28" cy="22" r="6" />
+              <circle cx="88" cy="42" r="6" />
+              <circle cx="136" cy="76" r="6" />
+              <circle cx="180" cy="100" r="6" />
+              <circle cx="210" cy="110" r="7" />
+            </g>
+          </g>
+        </svg>
+      `
+    case "forecastpanel":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(32 36)">
+            <rect x="0" y="0" width="110" height="108" rx="16" fill="#ffffff" stroke="#d5e1e5" />
+            <rect x="126" y="0" width="110" height="108" rx="16" fill="#ffffff" stroke="#d5e1e5" />
+            <path d="M12 82 C30 70, 48 56, 66 60 S88 84, 98 52" fill="none" stroke="#1f6f78" stroke-width="4" />
+            <path d="M138 84 C154 78, 170 74, 184 64 S210 36, 224 28" fill="none" stroke="#b9793e" stroke-width="4" />
+          </g>
+        </svg>
+      `
+    case "modelsummary":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(38 34)">
+            <rect x="0" y="0" width="110" height="94" rx="16" fill="#ffffff" stroke="#d5e1e5" />
+            <rect x="122" y="0" width="96" height="94" rx="16" fill="#ffffff" stroke="#d5e1e5" />
+            <rect x="0" y="106" width="218" height="18" rx="9" fill="#d7ece8" />
+            <line x1="14" y1="24" x2="96" y2="24" stroke="#d5e1e5" stroke-width="2" />
+            <line x1="14" y1="44" x2="96" y2="44" stroke="#d5e1e5" stroke-width="2" />
+            <line x1="14" y1="64" x2="96" y2="64" stroke="#d5e1e5" stroke-width="2" />
+            <g fill="#efc58c">
+              <rect x="140" y="18" width="20" height="54" rx="8" />
+              <rect x="166" y="30" width="20" height="42" rx="8" />
+              <rect x="192" y="10" width="20" height="62" rx="8" />
+            </g>
+          </g>
+        </svg>
+      `
+    case "splitview":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(34 44)">
+            <rect x="0" y="0" width="168" height="92" rx="18" fill="#d7ece8" />
+            <rect x="178" y="0" width="70" height="92" rx="18" fill="#efc58c" />
+            <text x="52" y="48" fill="#16333b" font-size="16" font-family="sans-serif">Train</text>
+            <text x="198" y="48" fill="#16333b" font-size="16" font-family="sans-serif">Test</text>
+          </g>
+        </svg>
+      `
+    case "pipelineflow":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(28 58)">
+            <rect x="0" y="0" width="54" height="44" rx="16" fill="#d7ece8" />
+            <rect x="74" y="0" width="54" height="44" rx="16" fill="#efc58c" />
+            <rect x="148" y="0" width="54" height="44" rx="16" fill="#cfe8e2" />
+            <rect x="222" y="0" width="54" height="44" rx="16" fill="#d7ece8" />
+            <path d="M54 22 H74" stroke="#1f6f78" stroke-width="4" />
+            <path d="M128 22 H148" stroke="#1f6f78" stroke-width="4" />
+            <path d="M202 22 H222" stroke="#1f6f78" stroke-width="4" />
+          </g>
+        </svg>
+      `
+    case "confusioncard":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(74 34)">
+            <rect x="0" y="0" width="86" height="86" rx="14" fill="#ffffff" stroke="#d5e1e5" />
+            <line x1="43" y1="0" x2="43" y2="86" stroke="#d5e1e5" />
+            <line x1="0" y1="43" x2="86" y2="43" stroke="#d5e1e5" />
+            <rect x="0" y="0" width="43" height="43" rx="14" fill="#d7ece8" />
+            <rect x="43" y="43" width="43" height="43" rx="14" fill="#efc58c" />
+            <rect x="112" y="18" width="52" height="16" rx="8" fill="#d7ece8" />
+            <rect x="112" y="44" width="52" height="16" rx="8" fill="#efc58c" />
+          </g>
+        </svg>
+      `
+    case "clusterdemo":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(44 40)">
+            <g fill="#1f6f78">
+              <circle cx="30" cy="36" r="7" />
+              <circle cx="56" cy="24" r="7" />
+              <circle cx="62" cy="50" r="7" />
+            </g>
+            <g fill="#b9793e">
+              <circle cx="138" cy="72" r="7" />
+              <circle cx="160" cy="58" r="7" />
+              <circle cx="170" cy="84" r="7" />
+            </g>
+            <g fill="#7bb8b1">
+              <circle cx="214" cy="26" r="7" />
+              <circle cx="236" cy="40" r="7" />
+              <circle cx="224" cy="60" r="7" />
+            </g>
+          </g>
+        </svg>
+      `
+    case "networkstack":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(42 34)">
+            <g fill="#d7ece8">
+              <circle cx="20" cy="22" r="8" />
+              <circle cx="20" cy="52" r="8" />
+              <circle cx="20" cy="82" r="8" />
+            </g>
+            <g fill="#efc58c">
+              <circle cx="92" cy="12" r="8" />
+              <circle cx="92" cy="34" r="8" />
+              <circle cx="92" cy="56" r="8" />
+              <circle cx="92" cy="78" r="8" />
+              <circle cx="92" cy="100" r="8" />
+            </g>
+            <g fill="#cfe8e2">
+              <circle cx="164" cy="26" r="8" />
+              <circle cx="164" cy="52" r="8" />
+              <circle cx="164" cy="78" r="8" />
+            </g>
+            <g fill="#1f6f78">
+              <circle cx="236" cy="52" r="10" />
+            </g>
+            <g stroke="#cad7dc">
+              <line x1="28" y1="22" x2="84" y2="12" />
+              <line x1="28" y1="22" x2="84" y2="34" />
+              <line x1="28" y1="52" x2="84" y2="56" />
+              <line x1="28" y1="82" x2="84" y2="78" />
+              <line x1="100" y1="34" x2="156" y2="26" />
+              <line x1="100" y1="56" x2="156" y2="52" />
+              <line x1="100" y1="78" x2="156" y2="78" />
+              <line x1="172" y1="26" x2="226" y2="52" />
+              <line x1="172" y1="52" x2="226" y2="52" />
+              <line x1="172" y1="78" x2="226" y2="52" />
+            </g>
+          </g>
+        </svg>
+      `
+    case "trainingcurve":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(38 40)">
+            <line x1="0" y1="96" x2="236" y2="96" stroke="#cad7dc" stroke-width="1.5" />
+            <path d="M12 22 C36 34, 58 44, 82 56 S122 68, 146 74 S184 78, 224 82" fill="none" stroke="#1f6f78" stroke-width="4" />
+            <path d="M12 86 C36 78, 58 64, 82 54 S122 34, 146 28 S184 24, 224 22" fill="none" stroke="#b9793e" stroke-width="4" />
+            <rect x="162" y="6" width="66" height="20" rx="10" fill="#ffffff" stroke="#d5e1e5" />
+          </g>
+        </svg>
+      `
+    case "tokengrid":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(34 42)">
+            <rect x="0" y="0" width="58" height="22" rx="11" fill="#d7ece8" />
+            <rect x="66" y="0" width="66" height="22" rx="11" fill="#efc58c" />
+            <rect x="140" y="0" width="54" height="22" rx="11" fill="#cfe8e2" />
+            <rect x="10" y="42" width="96" height="56" rx="16" fill="#ffffff" stroke="#d5e1e5" />
+            <rect x="126" y="42" width="112" height="56" rx="16" fill="#ffffff" stroke="#d5e1e5" />
+            <path d="M106 70 L126 70" stroke="#1f6f78" stroke-width="4" />
+          </g>
+        </svg>
+      `
+    case "topicmap":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(40 36)">
+            <circle cx="44" cy="48" r="26" fill="#d7ece8" />
+            <circle cx="118" cy="34" r="22" fill="#efc58c" />
+            <circle cx="186" cy="58" r="28" fill="#cfe8e2" />
+            <circle cx="238" cy="28" r="16" fill="#b9793e" opacity="0.8" />
+            <path d="M66 48 L98 38" stroke="#1f6f78" stroke-width="3" />
+            <path d="M138 40 L160 52" stroke="#1f6f78" stroke-width="3" />
+            <path d="M206 44 L224 32" stroke="#1f6f78" stroke-width="3" />
+          </g>
+        </svg>
+      `
+    case "semanticspace":
+      return `
+        <svg viewBox="0 0 320 190" aria-hidden="true">
+          <rect x="16" y="16" width="288" height="158" rx="24" fill="#f8faf9" />
+          <g transform="translate(40 38)">
+            <line x1="0" y1="96" x2="236" y2="96" stroke="#cad7dc" stroke-width="1.5" />
+            <line x1="0" y1="0" x2="0" y2="96" stroke="#cad7dc" stroke-width="1.5" />
+            <g fill="#1f6f78">
+              <circle cx="46" cy="62" r="6" />
+              <circle cx="58" cy="48" r="6" />
+              <circle cx="78" cy="54" r="6" />
+            </g>
+            <g fill="#b9793e">
+              <circle cx="156" cy="26" r="6" />
+              <circle cx="174" cy="36" r="6" />
+              <circle cx="188" cy="22" r="6" />
+            </g>
+            <g fill="#7bb8b1">
+              <circle cx="122" cy="78" r="6" />
+              <circle cx="140" cy="70" r="6" />
+              <circle cx="160" cy="82" r="6" />
+            </g>
+          </g>
+        </svg>
+      `
     case "heatmap":
       return `
         <svg viewBox="0 0 320 190" aria-hidden="true">
@@ -408,7 +824,7 @@ function renderVisualDemo(command) {
 
   return `
     <section class="detail-section">
-      <h4>图形示意</h4>
+      <h4>理解演示</h4>
       <article class="visual-demo-card">
         <div class="visual-demo-frame">
           ${buildVisualPreviewSvg(command.visualDemo.type)}
