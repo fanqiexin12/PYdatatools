@@ -20,7 +20,9 @@
   --radius-lg: 20px;
   --radius-md: 16px;
   --radius-sm: 12px;
-  --max-width: 1480px;
+  --max-width: 1580px;
+  --workspace-columns: 248px 1fr 620px;
+  --workspace-columns-wide: 240px 1fr;
   --font-sans:
     "Avenir Next", "Segoe UI", "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", sans-serif;
@@ -186,7 +188,7 @@ body.is-ready .footer-note {
 
 .workspace {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 460px;
+  grid-template-columns: var(--workspace-columns);
   gap: 1rem;
   align-items: start;
 }
@@ -213,17 +215,23 @@ body.is-ready .footer-note {
 .detail-panel {
   position: sticky;
   top: 1rem;
+  max-height: calc(100vh - 2rem);
 }
 
 .detail-panel {
+  min-width: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  max-height: calc(100vh - 2rem);
 }
 
 .sidebar {
   display: grid;
   gap: 1.2rem;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding-right: 0.35rem;
+  scrollbar-gutter: stable both-edges;
+  overscroll-behavior: contain;
 }
 
 .section-intro h2,
@@ -687,8 +695,11 @@ kbd {
 .detail-view {
   display: grid;
   gap: 1rem;
-  overflow: auto;
-  padding-right: 0.2rem;
+  min-width: 0;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding-right: 0.6rem;
+  scrollbar-gutter: stable both-edges;
 }
 
 .detail-header h3 {
@@ -733,6 +744,7 @@ kbd {
 .detail-section {
   padding-top: 1rem;
   border-top: 1px solid rgba(24, 35, 45, 0.08);
+  min-width: 0;
 }
 
 .detail-section h4 {
@@ -753,6 +765,8 @@ kbd {
 .syntax-block,
 .code-block {
   margin: 0;
+  width: 100%;
+  max-width: 100%;
   padding: 0.9rem 1rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -766,6 +780,13 @@ kbd {
 
 .syntax-block {
   color: #d8efe9;
+}
+
+.syntax-block code,
+.code-block code {
+  display: block;
+  width: max-content;
+  min-width: 100%;
 }
 
 .detail-list {
@@ -832,6 +853,7 @@ kbd {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.38);
+  min-width: 0;
 }
 
 .official-ref-card {
@@ -913,6 +935,7 @@ kbd {
   align-items: start;
   justify-content: space-between;
   gap: 1rem;
+  min-width: 0;
 }
 
 .example-meta h5 {
@@ -927,6 +950,48 @@ kbd {
 
 .example-card .code-block {
   margin-top: 0.9rem;
+}
+
+.sidebar,
+.detail-view,
+.syntax-block,
+.code-block {
+  scrollbar-width: auto;
+  scrollbar-color: rgba(31, 111, 120, 0.58) rgba(19, 33, 42, 0.12);
+}
+
+.sidebar::-webkit-scrollbar,
+.detail-view::-webkit-scrollbar,
+.syntax-block::-webkit-scrollbar,
+.code-block::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.sidebar::-webkit-scrollbar-track,
+.detail-view::-webkit-scrollbar-track,
+.syntax-block::-webkit-scrollbar-track,
+.code-block::-webkit-scrollbar-track {
+  background: rgba(19, 33, 42, 0.1);
+  border-radius: 999px;
+}
+
+.sidebar::-webkit-scrollbar-thumb,
+.detail-view::-webkit-scrollbar-thumb,
+.syntax-block::-webkit-scrollbar-thumb,
+.code-block::-webkit-scrollbar-thumb {
+  background: rgba(31, 111, 120, 0.56);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover,
+.detail-view::-webkit-scrollbar-thumb:hover,
+.syntax-block::-webkit-scrollbar-thumb:hover,
+.code-block::-webkit-scrollbar-thumb:hover {
+  background: rgba(31, 111, 120, 0.72);
+  background-clip: padding-box;
 }
 
 .placeholder {
@@ -971,7 +1036,7 @@ kbd {
 
 @media (max-width: 1240px) {
   .workspace {
-    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-columns: var(--workspace-columns-wide);
   }
 
   .detail-panel {
@@ -998,6 +1063,8 @@ kbd {
 
   .sidebar {
     position: static;
+    max-height: none;
+    overflow: visible;
   }
 
   .category-grid {
