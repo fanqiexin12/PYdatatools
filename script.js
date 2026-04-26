@@ -26,12 +26,14 @@ const indexedCommands = commands.map((command) => ({
 
 const commandMap = new Map(indexedCommands.map((command) => [command.id, command]))
 const scenarioMap = new Map(scenarios.map((scenario) => [scenario.id, scenario]))
+const tutorialMap = new Map(tutorials.map((tutorial) => [tutorial.id, tutorial]))
 
 const state = {
   library: "all",
   category: "all",
   search: "",
   scenarioId: null,
+  tutorialId: tutorials[0]?.id ?? null,
   selectedId: indexedCommands[0]?.id ?? null,
 }
 
@@ -43,6 +45,8 @@ const refs = {
   quickActions: document.querySelector("#quickActions"),
   scenarioRail: document.querySelector("#scenarioRail"),
   scenarioDetail: document.querySelector("#scenarioDetail"),
+  tutorialRail: document.querySelector("#tutorialRail"),
+  tutorialDetail: document.querySelector("#tutorialDetail"),
   searchInput: document.querySelector("#searchInput"),
   clearSearch: document.querySelector("#clearSearch"),
   resultCount: document.querySelector("#resultCount"),
@@ -885,6 +889,125 @@ function getScenarioById(id) {
   return scenarioMap.get(id) ?? null
 }
 
+function getTutorialById(id) {
+  return tutorialMap.get(id) ?? null
+}
+
+function getTutorialsForCommand(commandId) {
+  return tutorials.filter(
+    (tutorial) =>
+      tutorial.commandIds.includes(commandId) ||
+      tutorial.walkthrough.some((step) => step.commandId === commandId)
+  )
+}
+
+function renderTutorialDataset(dataset) {
+  if (!dataset) {
+    return ""
+  }
+
+  let body = ""
+
+  if (dataset.kind === "table") {
+    const columnsMarkup = dataset.columns
+      .map((column) => `<th>${escapeHtml(column)}</th>`)
+      .join("")
+    const rowsMarkup = dataset.rows
+      .map(
+        (row) => `
+          <tr>
+            ${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}
+          </tr>
+        `
+      )
+      .join("")
+
+    body = `
+      <div class="lesson-table-wrap">
+        <table class="lesson-table">
+          <thead>
+            <tr>${columnsMarkup}</tr>
+          </thead>
+          <tbody>${rowsMarkup}</tbody>
+        </table>
+      </div>
+    `
+  } else if (dataset.kind === "array") {
+    const rowsMarkup = dataset.rows
+      .map(
+        (row) => `
+          <div class="lesson-array-row">
+            ${row
+              .map((cell) => `<span class="lesson-array-cell">${escapeHtml(cell)}</span>`)
+              .join("")}
+          </div>
+        `
+      )
+      .join("")
+
+    body = `<div class="lesson-array-grid">${rowsMarkup}</div>`
+  } else if (dataset.kind === "text") {
+    const blocksMarkup = dataset.blocks
+      .map(
+        (block) => `
+          <pre class="lesson-text-block"><code>${escapeHtml(block)}</code></pre>
+        `
+      )
+      .join("")
+
+    body = `<div class="lesson-text-grid">${blocksMarkup}</div>`
+  }
+
+  return `
+    <section class="tutorial-card tutorial-dataset-card">
+      <div class="tutorial-card-copy">
+        <p class="tutorial-card-kicker">Practice Data</p>
+        <h4>${escapeHtml(dataset.title)}</h4>
+        <p>${escapeHtml(dataset.note)}</p>
+      </div>
+      ${body}
+    </section>
+  `
+}
+
+function renderTutorialLinks(command) {
+  const linkedTutorials = getTutorialsForCommand(command.id)
+
+  if (!linkedTutorials.length) {
+    return ""
+  }
+
+  const cards = linkedTutorials
+    .slice(0, 4)
+    .map(
+      (tutorial) => `
+        <button
+          class="tutorial-related-card"
+          type="button"
+          data-open-tutorial-id="${escapeHtml(tutorial.id)}"
+        >
+          <span class="tutorial-related-topline">
+            <span class="tutorial-related-level">${escapeHtml(tutorial.level)}</span>
+            <span class="tutorial-related-duration">${escapeHtml(tutorial.duration)}</span>
+          </span>
+          <strong>${escapeHtml(tutorial.title)}</strong>
+          <span>${escapeHtml(tutorial.summary)}</span>
+        </button>
+      `
+    )
+    .join("")
+
+  return `
+    <section class="detail-section">
+      <h4>教程串联</h4>
+      <p class="detail-section-note">
+        这条命令不只是单点写法，它会在下面这些教程里和其它命令一起出现。
+      </p>
+      <div class="tutorial-related-grid">${cards}</div>
+    </section>
+  `
+}
+
 function getFilteredCommands() {
   const query = normalize(state.search)
 
@@ -953,6 +1076,7 @@ function renderHeroStats() {
     { value: `${Object.keys(libraryMeta).length - 1} 个`, label: "常用库" },
     { value: `${Object.keys(categoryMeta).length - 1} 类`, label: "任务类型" },
     { value: `${scenarios.length} 条`, label: "场景流程" },
+    { value: `${tutorials.length} 节`, label: "专题教程" },
   ]
 
   refs.heroStats.innerHTML = metrics
@@ -1127,9 +1251,190 @@ function renderScenarioDetail() {
   `
 }
 
+function renderTutorialRail() {
+  refs.tutorialRail.innerHTML = tutorials
+    .map((tutorial) => {
+      const active = tutorial.id === state.tutorialId
+
+      return `
+        <button
+          class="lesson-button"
+          type="button"
+          data-tutorial-id="${escapeHtml(tutorial.id)}"
+          data-active="${String(active)}"
+          aria-pressed="${String(active)}"
+        >
+          <span class="lesson-button-topline">
+            <span class="lesson-button-library">${escapeHtml(tutorial.library)}</span>
+            <span class="lesson-button-meta">${escapeHtml(tutorial.level)} · ${escapeHtml(
+              tutorial.duration
+            )}</span>
+          </span>
+          <span class="lesson-button-title">${escapeHtml(tutorial.title)}</span>
+          <span class="lesson-button-copy">${escapeHtml(tutorial.summary)}</span>
+        </button>
+      `
+    })
+    .join("")
+}
+
+function renderTutorialDetail() {
+  if (!state.tutorialId) {
+    refs.tutorialDetail.innerHTML = `
+      <p class="scenario-kicker">Learning Mode</p>
+      <h3 class="result-title">这里会放一节完整教程</h3>
+      <p class="scenario-summary">
+        你可以先选一节课，再顺着样例数据、步骤说明和跳转命令一起学。和“按场景开始”不同，这里更强调为什么这样写、每一步会看到什么。
+      </p>
+    `
+    return
+  }
+
+  const tutorial = getTutorialById(state.tutorialId)
+  if (!tutorial) {
+    refs.tutorialDetail.innerHTML = ""
+    return
+  }
+
+  const focusMarkup = tutorial.focus
+    .map((item) => `<span class="scenario-pill">${escapeHtml(item)}</span>`)
+    .join("")
+
+  const objectivesMarkup = tutorial.objectives
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join("")
+
+  const stepsMarkup = tutorial.walkthrough
+    .map((step, index) => {
+      const command = getCommandById(step.commandId)
+
+      return `
+        <article class="lesson-step-card">
+          <div class="lesson-step-head">
+            <div class="lesson-step-copy">
+              <span class="lesson-step-index">Step ${index + 1}</span>
+              <h4>${escapeHtml(step.title)}</h4>
+            </div>
+            <button
+              class="ghost-button lesson-jump-button"
+              type="button"
+              data-tutorial-command-id="${escapeHtml(step.commandId)}"
+            >
+              跳到命令
+            </button>
+          </div>
+          <div class="lesson-step-command">
+            <span class="badge badge-library">${escapeHtml(command?.library ?? tutorial.library)}</span>
+            <strong>${escapeHtml(command?.alias ?? step.commandId)}</strong>
+            <span>${escapeHtml(command?.title ?? step.commandId)}</span>
+          </div>
+          <p class="lesson-step-why">${escapeHtml(step.why)}</p>
+          <pre class="code-block"><code>${escapeHtml(step.code)}</code></pre>
+          <div class="lesson-output-card">
+            <span class="lesson-output-label">你会看到</span>
+            <p>${escapeHtml(step.output)}</p>
+          </div>
+        </article>
+      `
+    })
+    .join("")
+
+  const takeawaysMarkup = tutorial.takeaways
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join("")
+
+  refs.tutorialDetail.innerHTML = `
+    <section class="tutorial-hero">
+      <div class="tutorial-hero-copy">
+        <p class="scenario-kicker">Learning Path</p>
+        <h3 class="result-title">${escapeHtml(tutorial.title)}</h3>
+        <p class="tutorial-summary">${escapeHtml(tutorial.summary)}</p>
+      </div>
+      <div class="tutorial-stat-grid">
+        <article class="detail-kpi">
+          <span class="detail-kpi-value">${tutorial.walkthrough.length}</span>
+          <span class="detail-kpi-label">核心步骤</span>
+        </article>
+        <article class="detail-kpi">
+          <span class="detail-kpi-value">${tutorial.commandIds.length}</span>
+          <span class="detail-kpi-label">关联命令</span>
+        </article>
+        <article class="detail-kpi">
+          <span class="detail-kpi-value">${escapeHtml(tutorial.level)}</span>
+          <span class="detail-kpi-label">建议难度</span>
+        </article>
+      </div>
+    </section>
+
+    <div class="scenario-highlights">${focusMarkup}</div>
+
+    <section class="tutorial-card">
+      <div class="tutorial-card-copy">
+        <p class="tutorial-card-kicker">You Will Learn</p>
+        <h4>这节课的学习目标</h4>
+      </div>
+      <ul class="detail-list">${objectivesMarkup}</ul>
+    </section>
+
+    ${renderTutorialDataset(tutorial.dataset)}
+
+    <section class="tutorial-card">
+      <div class="tutorial-card-copy">
+        <p class="tutorial-card-kicker">Walkthrough</p>
+        <h4>分步骤理解这条链路</h4>
+      </div>
+      <div class="lesson-step-list">${stepsMarkup}</div>
+    </section>
+
+    <section class="tutorial-card">
+      <div class="tutorial-card-copy">
+        <p class="tutorial-card-kicker">Checklist</p>
+        <h4>学完要记住什么</h4>
+      </div>
+      <ul class="detail-list">${takeawaysMarkup}</ul>
+    </section>
+
+    <section class="tutorial-card tutorial-practice-card">
+      <div class="tutorial-card-copy">
+        <p class="tutorial-card-kicker">Practice</p>
+        <h4>练习一下</h4>
+        <p>${escapeHtml(tutorial.practice)}</p>
+      </div>
+      <div class="scenario-actions">
+        <p>如果你想一边看课一边查命令，可以把结果区切到这节课对应的命令范围。</p>
+        <div class="tutorial-actions-row">
+          <button
+            class="ghost-button"
+            type="button"
+            data-apply-tutorial-id="${escapeHtml(tutorial.id)}"
+          >
+            按这节课筛选命令
+          </button>
+          <button
+            class="ghost-button"
+            type="button"
+            data-clear-tutorial="true"
+          >
+            关闭教程焦点
+          </button>
+        </div>
+      </div>
+    </section>
+  `
+}
+
 function renderSummary(filteredCommands) {
+  const activeTutorial = getTutorialById(state.tutorialId)
+  const tutorialFilterActive =
+    activeTutorial &&
+    state.library === (activeTutorial.filterLibrary ?? "all") &&
+    state.category === (activeTutorial.filterCategory ?? "all") &&
+    state.search === (activeTutorial.filterSearch ?? "")
+
   const currentMode = state.scenarioId
     ? getScenarioById(state.scenarioId)?.title ?? "场景流程"
+    : tutorialFilterActive
+      ? `教程：${activeTutorial.title}`
     : "自由检索"
 
   const metrics = [
@@ -1154,6 +1459,8 @@ function renderSummary(filteredCommands) {
     refs.resultCount.textContent = `关键词 “${state.search}” 命中 ${filteredCommands.length} 条`
   } else if (state.scenarioId) {
     refs.resultCount.textContent = `当前流程下共 ${filteredCommands.length} 条`
+  } else if (tutorialFilterActive) {
+    refs.resultCount.textContent = `当前教程下共 ${filteredCommands.length} 条`
   } else {
     refs.resultCount.textContent = `共 ${filteredCommands.length} 条可选`
   }
@@ -1275,6 +1582,7 @@ function renderDetail() {
 
   const officialReferencesMarkup = renderOfficialReferences(command)
   const visualDemoMarkup = renderVisualDemo(command)
+  const tutorialLinksMarkup = renderTutorialLinks(command)
 
   refs.copyCodeButton.disabled = false
   refs.detailView.innerHTML = `
@@ -1332,6 +1640,8 @@ function renderDetail() {
       <div class="parameter-list">${parameterMarkup}</div>
     </section>
 
+    ${tutorialLinksMarkup}
+
     ${visualDemoMarkup}
 
     <section class="detail-section">
@@ -1360,6 +1670,8 @@ function renderAll() {
   renderQuickActions()
   renderScenarioRail()
   renderScenarioDetail()
+  renderTutorialRail()
+  renderTutorialDetail()
   renderSummary(filteredCommands)
   renderResults(filteredCommands)
   renderDetail()
@@ -1405,6 +1717,21 @@ function applyQuickFilter(label) {
   state.category = quickFilter.category
   state.search = quickFilter.search
   refs.searchInput.value = quickFilter.search
+  renderAll()
+}
+
+function applyTutorialFilters(id) {
+  const tutorial = getTutorialById(id)
+  if (!tutorial) {
+    return
+  }
+
+  state.scenarioId = null
+  state.library = tutorial.filterLibrary ?? "all"
+  state.category = tutorial.filterCategory ?? "all"
+  state.search = tutorial.filterSearch ?? ""
+  state.selectedId = tutorial.leadId ?? state.selectedId
+  refs.searchInput.value = state.search
   renderAll()
 }
 
@@ -1515,6 +1842,16 @@ function bindEvents() {
     applyScenario(button.dataset.scenarioId)
   })
 
+  refs.tutorialRail.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-tutorial-id]")
+    if (!button) {
+      return
+    }
+
+    state.tutorialId = button.dataset.tutorialId
+    renderAll()
+  })
+
   refs.scenarioDetail.addEventListener("click", (event) => {
     const clearButton = event.target.closest("[data-clear-scenario]")
     if (clearButton) {
@@ -1534,6 +1871,31 @@ function bindEvents() {
     })
   })
 
+  refs.tutorialDetail.addEventListener("click", (event) => {
+    const clearButton = event.target.closest("[data-clear-tutorial]")
+    if (clearButton) {
+      state.tutorialId = null
+      renderAll()
+      return
+    }
+
+    const applyButton = event.target.closest("[data-apply-tutorial-id]")
+    if (applyButton) {
+      applyTutorialFilters(applyButton.dataset.applyTutorialId)
+      return
+    }
+
+    const commandButton = event.target.closest("[data-tutorial-command-id]")
+    if (!commandButton) {
+      return
+    }
+
+    selectCommand(commandButton.dataset.tutorialCommandId, {
+      syncFilters: true,
+      clearSearchIfHidden: true,
+    })
+  })
+
   refs.resultsList.addEventListener("click", (event) => {
     const button = event.target.closest("[data-id]")
     if (!button) {
@@ -1544,6 +1906,13 @@ function bindEvents() {
   })
 
   refs.detailView.addEventListener("click", (event) => {
+    const tutorialButton = event.target.closest("[data-open-tutorial-id]")
+    if (tutorialButton) {
+      state.tutorialId = tutorialButton.dataset.openTutorialId
+      renderAll()
+      return
+    }
+
     const button = event.target.closest("[data-related-id]")
     if (button) {
       selectCommand(button.dataset.relatedId, {

@@ -296,6 +296,771 @@ const scenarios = [
   },
 ]
 
+const tutorials = [
+  {
+    id: "tutorial-pandas-cleaning",
+    title: "pandas 数据清洗入门",
+    level: "入门",
+    duration: "18 分钟",
+    library: "pandas",
+    filterLibrary: "pandas",
+    filterCategory: "all",
+    filterSearch: "",
+    leadId: "pd-read-csv",
+    summary: "从读入、摸底、补缺失、去重到构造新字段，完成一张业务表的第一轮清洗。",
+    focus: ["缺失值", "类型转换", "去重", "派生字段"],
+    objectives: [
+      "知道为什么清洗前要先看结构、类型和缺失比例。",
+      "学会把 fillna、astype、drop_duplicates 串成一个稳定流程。",
+      "能在清洗结束后补出后续分析要用的新字段。",
+    ],
+    commandIds: [
+      "pd-read-csv",
+      "pd-info",
+      "pd-fillna",
+      "pd-astype",
+      "pd-drop-duplicates",
+      "pd-assign",
+    ],
+    dataset: {
+      kind: "table",
+      title: "订单明细样例",
+      note: "这是一张人工整理过的订单表，里面混有缺失值、重复记录和缩写城市名。",
+      columns: ["order_id", "city", "qty", "price", "paid_at"],
+      rows: [
+        ["1001", "SH", "2", "35.5", "2026-01-03"],
+        ["1002", "BJ", "", "19.0", "2026-01-03"],
+        ["1002", "Beijing", "1", "19.0", "2026-01-04"],
+        ["1003", "SZ", "4", "12.5", "2026-01-04"],
+      ],
+    },
+    walkthrough: [
+      {
+        title: "先读入并检查列结构",
+        commandId: "pd-read-csv",
+        why: "清洗前先确认列名、缺失值和日期列形态，能避免后续一连串误判。",
+        code: `df = pd.read_csv("orders.csv")
+df.info()`,
+        output: "qty 这一列存在缺失值，paid_at 仍然是 object，说明还不能直接拿去做时间分析。",
+      },
+      {
+        title: "补缺失并统一数值类型",
+        commandId: "pd-fillna",
+        why: "先把规则明确的缺失补上，再统一成后续计算能接受的 dtype。",
+        code: `df["qty"] = df["qty"].fillna(0)
+df["qty"] = df["qty"].astype("int64")`,
+        output: "qty 不再有 NaN，列类型变成 int64，后面算金额时不会再被字符串或空值卡住。",
+      },
+      {
+        title: "按时间排序后去重",
+        commandId: "pd-drop-duplicates",
+        why: "重复记录通常需要先排序，再明确保留最后一次还是第一次。",
+        code: `df = (
+    df.sort_values("paid_at")
+      .drop_duplicates(subset=["order_id"], keep="last")
+)`,
+        output: "重复的 order_id=1002 只保留较新的那一条，数据口径会更稳定。",
+      },
+      {
+        title: "补出分析字段",
+        commandId: "pd-assign",
+        why: "清洗完之后，最好立刻把金额、统一城市名之类的高频字段生成出来。",
+        code: `city_map = {"SH": "Shanghai", "BJ": "Beijing", "SZ": "Shenzhen"}
+df = df.assign(
+    city=df["city"].replace(city_map),
+    amount=df["qty"] * df["price"]
+)`,
+        output: "得到统一 city 和新 amount 列，后面无论做 groupby 还是画图都更顺手。",
+      },
+    ],
+    takeaways: [
+      "清洗最怕边看边改；先摸底再动手，会少很多返工。",
+      "去重和补值都属于口径选择，最好在代码旁边写清保留规则。",
+      "新字段越早抽样检查，越容易及时发现链式写法里的偏差。",
+    ],
+    practice: "把 city 里的简称全部统一成英文全称，并筛出 amount > 50 的订单。",
+  },
+  {
+    id: "tutorial-pandas-groupby",
+    title: "groupby 分组统计实战",
+    level: "入门",
+    duration: "15 分钟",
+    library: "pandas",
+    filterLibrary: "pandas",
+    filterCategory: "group",
+    filterSearch: "",
+    leadId: "pd-groupby-agg",
+    summary: "围绕分组聚合、排序和透视输出，搭一条报表里最常见的统计链路。",
+    focus: ["groupby", "agg", "排序", "透视表"],
+    objectives: [
+      "理解 groupby 的分组键和统计指标是怎么组合起来的。",
+      "掌握命名聚合后的排序与字段整理。",
+      "知道什么时候该从 groupby 切到 pivot_table。",
+    ],
+    commandIds: ["pd-groupby-agg", "pd-sort-values", "pd-pivot-table", "pd-crosstab"],
+    dataset: {
+      kind: "table",
+      title: "城市销售样例",
+      note: "我们希望知道每个城市的订单量、销量和销售额。",
+      columns: ["city", "category", "qty", "amount"],
+      rows: [
+        ["Shanghai", "A", "2", "71.0"],
+        ["Shanghai", "B", "1", "25.0"],
+        ["Beijing", "A", "3", "90.0"],
+        ["Shenzhen", "B", "4", "50.0"],
+      ],
+    },
+    walkthrough: [
+      {
+        title: "先做城市维度聚合",
+        commandId: "pd-groupby-agg",
+        why: "先把订单级数据压成城市级摘要，是报表的第一步。",
+        code: `summary = (
+    df.groupby("city", as_index=False)
+      .agg(order_count=("city", "size"),
+           total_qty=("qty", "sum"),
+           total_amount=("amount", "sum"))
+)`,
+        output: "结果会得到 order_count、total_qty、total_amount 三个报表字段。",
+      },
+      {
+        title: "按关键指标排序",
+        commandId: "pd-sort-values",
+        why: "聚合之后如果不排序，读报表的人很难一眼抓到头部城市。",
+        code: `summary = summary.sort_values("total_amount", ascending=False)`,
+        output: "城市会按照 total_amount 从高到低展示，更适合直接贴到周报里。",
+      },
+      {
+        title: "切到宽表输出",
+        commandId: "pd-pivot-table",
+        why: "当你希望行列同时带维度时，pivot_table 通常比手写二次 groupby 更清晰。",
+        code: `city_by_category = pd.pivot_table(
+    df,
+    index="city",
+    columns="category",
+    values="amount",
+    aggfunc="sum",
+    fill_value=0
+)`,
+        output: "输出会变成“城市 x 品类”的宽表，适合做管理层汇总看板。",
+      },
+    ],
+    takeaways: [
+      "groupby 做摘要，pivot_table 做交叉口径，这两个角色最好分清。",
+      "命名聚合能让输出字段更像报表语言，不用再临时 rename。",
+      "排序通常不是最后一步，而是让分析结果真正可读的一步。",
+    ],
+    practice: "按 category 和 city 双维度统计平均客单价，再按 category 内的销售额排序。",
+  },
+  {
+    id: "tutorial-pandas-join",
+    title: "merge / join 多表合并",
+    level: "进阶",
+    duration: "20 分钟",
+    library: "pandas",
+    filterLibrary: "pandas",
+    filterCategory: "join",
+    filterSearch: "",
+    leadId: "pd-merge",
+    summary: "学会把订单表、用户表和维度表安全地合在一起，并检查记录数有没有异常放大。",
+    focus: ["merge", "concat", "口径检查"],
+    objectives: [
+      "理解 left / inner 合并对样本量的影响。",
+      "学会在合并后立刻检查记录数和缺失率。",
+      "知道 concat 更适合纵向拼接还是横向补齐。",
+    ],
+    commandIds: ["pd-merge", "pd-concat", "pd-merge-asof", "pd-merge-ordered"],
+    dataset: {
+      kind: "table",
+      title: "订单表 + 用户表",
+      note: "订单表里有 user_id，用户表里有城市和等级信息，希望做成一张分析宽表。",
+      columns: ["orders.order_id", "orders.user_id", "orders.amount", "users.user_id", "users.city", "users.level"],
+      rows: [
+        ["1001", "u01", "71.0", "u01", "Shanghai", "VIP"],
+        ["1002", "u02", "19.0", "u02", "Beijing", "New"],
+        ["1003", "u99", "50.0", "", "", ""],
+      ],
+    },
+    walkthrough: [
+      {
+        title: "先做 left merge 保住订单主表",
+        commandId: "pd-merge",
+        why: "订单通常是主分析表，所以先用 left merge 保证订单不会被误删。",
+        code: `wide = orders.merge(users, on="user_id", how="left")`,
+        output: "所有订单都会保留，但 user_id 缺失匹配的行会在用户字段上出现 NaN。",
+      },
+      {
+        title: "立刻做合并后检查",
+        commandId: "pd-isna-sum",
+        why: "只要 merge 完，就该看记录数是否变化、补充字段是否出现大量缺失。",
+        code: `wide.shape
+wide[["city", "level"]].isna().sum()`,
+        output: "如果合并后行数突然翻倍，通常意味着键重复；如果维度字段大量缺失，说明映射表不全。",
+      },
+      {
+        title: "需要纵向补数时再用 concat",
+        commandId: "pd-concat",
+        why: "concat 更适合把多个月份、多个分区的数据上下拼起来。",
+        code: `all_orders = pd.concat([jan_orders, feb_orders], ignore_index=True)`,
+        output: "月份表会被纵向堆叠成一张更长的订单表，然后再统一 merge 维度会更省事。",
+      },
+    ],
+    takeaways: [
+      "merge 前先想清谁是主表，谁是补充维度。",
+      "合并后检查行数，是最值得养成的反射动作。",
+      "concat 不负责键匹配，它只是把结构相似的数据放到一起。",
+    ],
+    practice: "把订单表与城市维度表、品类维度表都接进来，并检查哪些键没有匹配到。",
+  },
+  {
+    id: "tutorial-pandas-time",
+    title: "时间序列处理与趋势分析",
+    level: "进阶",
+    duration: "18 分钟",
+    library: "all",
+    filterLibrary: "all",
+    filterCategory: "time",
+    filterSearch: "",
+    leadId: "pd-to-datetime",
+    summary: "从字符串日期开始，完成时间转换、按周汇总、环比和滚动均值分析。",
+    focus: ["to_datetime", "resample", "shift", "rolling"],
+    objectives: [
+      "理解为什么时间列必须尽早转换成 datetime。",
+      "掌握按日、按周、按月重采样的基本思路。",
+      "能用 shift 和 rolling 看环比与趋势平滑。",
+    ],
+    commandIds: ["pd-to-datetime", "pd-resample", "pd-shift", "pd-rolling", "sns-lineplot"],
+    dataset: {
+      kind: "table",
+      title: "每日销售样例",
+      note: "原始数据是订单级明细，这里只展示聚合前的关键字段。",
+      columns: ["paid_at", "amount"],
+      rows: [
+        ["2026-01-01", "90"],
+        ["2026-01-02", "120"],
+        ["2026-01-03", "110"],
+        ["2026-01-04", "150"],
+      ],
+    },
+    walkthrough: [
+      {
+        title: "先把日期列转成 datetime",
+        commandId: "pd-to-datetime",
+        why: "只有 dtype 正确，后面的 resample 和时序切片才会稳定。",
+        code: `df["paid_at"] = pd.to_datetime(df["paid_at"])
+df = df.sort_values("paid_at")`,
+        output: "paid_at 不再是字符串，排序和重采样都会按真正的时间顺序执行。",
+      },
+      {
+        title: "按周汇总趋势",
+        commandId: "pd-resample",
+        why: "把订单级波动压成周级趋势，是管理报表里非常常见的一步。",
+        code: `weekly = (
+    df.set_index("paid_at")
+      .resample("W")["amount"]
+      .sum()
+      .reset_index()
+)`,
+        output: "周汇总会把每天的 amount 聚成更平滑的周级曲线。",
+      },
+      {
+        title: "算环比和滚动均值",
+        commandId: "pd-rolling",
+        why: "shift 用来看前一期，rolling 用来看趋势是否稳定。",
+        code: `weekly["prev_amount"] = weekly["amount"].shift(1)
+weekly["ma_3"] = weekly["amount"].rolling(3).mean()`,
+        output: "你会同时得到前一期对照列和 3 期滚动均值，适合看增长和波动。",
+      },
+    ],
+    takeaways: [
+      "时间序列的第一步永远是转 datetime 和排序。",
+      "shift 看对比，rolling 看平滑，这两个经常一起出现。",
+      "重采样前先想清你要的是 sum、mean 还是 count。",
+    ],
+    practice: "把 weekly 改成按月汇总，并额外算出每月同比增长率的基础列。",
+  },
+  {
+    id: "tutorial-numpy-broadcast",
+    title: "NumPy 数组计算与广播",
+    level: "入门",
+    duration: "16 分钟",
+    library: "numpy",
+    filterLibrary: "numpy",
+    filterCategory: "numeric",
+    filterSearch: "",
+    leadId: "np-array",
+    summary: "从创建数组、重塑、广播到条件筛选，理解 NumPy 为什么比循环更适合批量数值计算。",
+    focus: ["array", "reshape", "broadcast", "where"],
+    objectives: [
+      "知道 shape 是理解 NumPy 写法的第一把钥匙。",
+      "掌握广播规则在“行列相加”场景里的作用。",
+      "会用 where 对整批数据做条件替换。",
+    ],
+    commandIds: ["np-array", "np-reshape", "np-where", "np-mean-axis", "np-stack"],
+    dataset: {
+      kind: "array",
+      title: "传感器读数矩阵",
+      note: "每一行是一台设备，每一列是同一时刻的读数。",
+      rows: [
+        ["12", "14", "13", "16"],
+        ["9", "11", "10", "12"],
+        ["15", "18", "17", "20"],
+      ],
+    },
+    walkthrough: [
+      {
+        title: "先明确 shape",
+        commandId: "np-array",
+        why: "写 NumPy 前先知道数据是几行几列，比背 API 名字更重要。",
+        code: `x = np.array([[12, 14, 13, 16],
+              [9, 11, 10, 12],
+              [15, 18, 17, 20]])
+x.shape`,
+        output: "shape 会返回 (3, 4)，说明这是 3 行 4 列的二维数组。",
+      },
+      {
+        title: "用广播统一加偏移量",
+        commandId: "np-reshape",
+        why: "当每一列都要减去一个基准时，广播比 for 循环更短也更快。",
+        code: `baseline = np.array([10, 10, 10, 10])
+delta = x - baseline`,
+        output: "baseline 会自动广播到每一行，delta 表示每个读数相对基准的偏移。",
+      },
+      {
+        title: "条件替换异常值",
+        commandId: "np-where",
+        why: "批量把异常值替换成上限或默认值，是 NumPy 很典型的场景。",
+        code: `capped = np.where(x > 18, 18, x)`,
+        output: "所有大于 18 的值都会被改成 18，不需要手写逐元素判断。",
+      },
+    ],
+    takeaways: [
+      "先看 shape，再决定 axis、reshape 和广播怎么写。",
+      "广播的核心不是魔法，而是“较小数组如何沿缺失维度扩展”。",
+      "where 特别适合做批量条件裁剪和分段映射。",
+    ],
+    practice: "按列计算每个时刻的平均值，再把小于列均值的元素标成 0。",
+  },
+  {
+    id: "tutorial-scipy-stats",
+    title: "SciPy 统计检验与平滑",
+    level: "进阶",
+    duration: "20 分钟",
+    library: "scipy",
+    filterLibrary: "scipy",
+    filterCategory: "all",
+    filterSearch: "",
+    leadId: "sp-stats-zscore",
+    summary: "围绕标准化、显著性检验和序列平滑，搭一条科研与分析常见的 SciPy 学习线。",
+    focus: ["zscore", "ttest", "linregress", "savgol"],
+    objectives: [
+      "知道检验前为什么要先看分布和尺度。",
+      "理解 t 检验的输入、输出和结论边界。",
+      "能把平滑结果和原始序列区分开来解释。",
+    ],
+    commandIds: [
+      "sp-stats-zscore",
+      "sp-stats-ttest-ind",
+      "sp-stats-linregress",
+      "sp-signal-savgol",
+    ],
+    dataset: {
+      kind: "array",
+      title: "A/B 两组实验读数",
+      note: "第一行是组 A，第二行是组 B，想比较均值是否显著不同。",
+      rows: [
+        ["10.2", "9.8", "10.5", "10.1", "9.9"],
+        ["11.4", "11.0", "10.8", "11.2", "11.1"],
+      ],
+    },
+    walkthrough: [
+      {
+        title: "先统一尺度看异常位置",
+        commandId: "sp-stats-zscore",
+        why: "不同量纲的数据先 zscore，能更容易看出偏离均值的点。",
+        code: `from scipy import stats
+z = stats.zscore(group_a)`,
+        output: "zscore 会把均值拉到 0、标准差拉到 1，更方便比较相对偏离程度。",
+      },
+      {
+        title: "比较两组均值差异",
+        commandId: "sp-stats-ttest-ind",
+        why: "独立样本 t 检验是比较实验组和对照组最常见的起点。",
+        code: `stat, p_value = stats.ttest_ind(group_a, group_b, equal_var=False)`,
+        output: "得到检验统计量和 p 值；通常先看 p 值，再结合样本量和效应大小解释。",
+      },
+      {
+        title: "平滑 noisy 序列",
+        commandId: "sp-signal-savgol",
+        why: "序列里噪声多时，可以先用 Savitzky-Golay 看趋势，但不要把它当成真实数据。",
+        code: `from scipy.signal import savgol_filter
+smooth = savgol_filter(series, window_length=5, polyorder=2)`,
+        output: "smooth 会比原始 series 更平滑，适合看趋势，不适合掩盖尖峰本身的业务含义。",
+      },
+    ],
+    takeaways: [
+      "显著性检验前最好先看数据分布和样本量。",
+      "p 值不是全部结论，还要看差值大小和业务意义。",
+      "平滑只能帮助观察，不应该替代原始观测。",
+    ],
+    practice: "对两组数据再做一次 wilcoxon 或 mannwhitneyu，对比参数检验和非参数检验的差异。",
+  },
+  {
+    id: "tutorial-statsmodels-regression",
+    title: "StatsModels 回归解释入门",
+    level: "进阶",
+    duration: "22 分钟",
+    library: "statsmodels",
+    filterLibrary: "statsmodels",
+    filterCategory: "model",
+    filterSearch: "",
+    leadId: "sm-ols",
+    summary: "从设计矩阵到 OLS summary，学会读系数、显著性和模型解释信息。",
+    focus: ["add_constant", "OLS", "summary"],
+    objectives: [
+      "理解为什么线性回归前要显式加入常数项。",
+      "学会从 summary 里读系数、p 值和 R-squared。",
+      "知道 statsmodels 的强项是解释层，而不只是预测。",
+    ],
+    commandIds: ["sm-add-constant", "sm-ols", "sm-summary", "sm-qqplot"],
+    dataset: {
+      kind: "table",
+      title: "广告费用与销售额样例",
+      note: "我们希望估计广告投放与销量之间的线性关系。",
+      columns: ["ad_spend", "sales"],
+      rows: [
+        ["10", "88"],
+        ["12", "95"],
+        ["15", "102"],
+        ["18", "118"],
+      ],
+    },
+    walkthrough: [
+      {
+        title: "先补常数项",
+        commandId: "sm-add-constant",
+        why: "很多 statsmodels 的显式矩阵写法，都需要你自己加入截距项。",
+        code: `X = sm.add_constant(df[["ad_spend"]])
+y = df["sales"]`,
+        output: "X 会从单列自变量变成包含 const 和 ad_spend 的设计矩阵。",
+      },
+      {
+        title: "拟合 OLS 模型",
+        commandId: "sm-ols",
+        why: "OLS 是最适合入门理解系数意义和显著性的模型。",
+        code: `model = sm.OLS(y, X).fit()`,
+        output: "fit 之后得到的是一个结果对象，真正有价值的解释信息都在它身上。",
+      },
+      {
+        title: "读 summary 里的关键列",
+        commandId: "sm-summary",
+        why: "summary 是 statsmodels 的精华，别只停留在模型能运行。",
+        code: `print(model.summary())`,
+        output: "重点先看 coef、P>|t|、R-squared，再结合残差诊断决定模型是否可信。",
+      },
+    ],
+    takeaways: [
+      "statsmodels 更像统计解释工具，而不是只追求预测准确率的工具。",
+      "常数项、系数、显著性和残差，是读回归的四个起点。",
+      "summary 很长，但第一次不必全读，先盯最关键几列。",
+    ],
+    practice: "加入第二个自变量后重新拟合，观察系数和显著性是否发生变化。",
+  },
+  {
+    id: "tutorial-sklearn-pipeline",
+    title: "scikit-learn 机器学习流水线",
+    level: "进阶",
+    duration: "24 分钟",
+    library: "sklearn",
+    filterLibrary: "sklearn",
+    filterCategory: "model",
+    filterSearch: "",
+    leadId: "sk-train-test-split",
+    summary: "从切分训练集、缩放特征、组装 Pipeline 到评估分类结果，走完标准机器学习流程。",
+    focus: ["train_test_split", "StandardScaler", "Pipeline", "confusion_matrix"],
+    objectives: [
+      "理解为什么切分训练/测试要放在预处理之前。",
+      "掌握 Pipeline 如何把预处理和模型封成一个整体。",
+      "知道为什么不能只看 accuracy。",
+    ],
+    commandIds: [
+      "sk-train-test-split",
+      "sk-standardscaler",
+      "sk-pipeline",
+      "sk-logistic-regression",
+      "sk-confusion-matrix",
+    ],
+    dataset: {
+      kind: "table",
+      title: "客户流失特征样例",
+      note: "目标是根据 tenure、monthly_fee 和 support_calls 预测 churn。",
+      columns: ["tenure", "monthly_fee", "support_calls", "churn"],
+      rows: [
+        ["3", "99", "6", "1"],
+        ["24", "45", "1", "0"],
+        ["11", "70", "4", "1"],
+        ["30", "39", "0", "0"],
+      ],
+    },
+    walkthrough: [
+      {
+        title: "先做训练测试切分",
+        commandId: "sk-train-test-split",
+        why: "先分训练和测试，再预处理，能避免信息泄漏到测试集。",
+        code: `X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)`,
+        output: "数据会被拆成训练集和测试集，后续缩放和拟合都只应该在训练集上完成。",
+      },
+      {
+        title: "把缩放和模型装进 Pipeline",
+        commandId: "sk-pipeline",
+        why: "流水线能保证训练和预测阶段走同一套预处理步骤。",
+        code: `pipeline = Pipeline([
+    ("scaler", StandardScaler()),
+    ("model", LogisticRegression(max_iter=1000))
+])
+pipeline.fit(X_train, y_train)`,
+        output: "拟合时会先 scaler 再 model，预测时也会自动复用同一套变换。",
+      },
+      {
+        title: "别只看 accuracy",
+        commandId: "sk-confusion-matrix",
+        why: "分类问题里，错在哪里往往比“总共对了多少”更重要。",
+        code: `pred = pipeline.predict(X_test)
+cm = confusion_matrix(y_test, pred)`,
+        output: "混淆矩阵能看出假阳性、假阴性分别多不多，适合和业务成本一起解释。",
+      },
+    ],
+    takeaways: [
+      "先切分，再预处理，是机器学习里最应该守住的基本功。",
+      "Pipeline 帮你把流程固定下来，减少手工漏步骤。",
+      "评估模型时要看误判分布，不要只盯着单个分数。",
+    ],
+    practice: "把 LogisticRegression 换成 RandomForestClassifier，对比两种模型的 confusion matrix。",
+  },
+  {
+    id: "tutorial-keras-sequential",
+    title: "Keras Sequential 网络训练",
+    level: "进阶",
+    duration: "22 分钟",
+    library: "keras",
+    filterLibrary: "keras",
+    filterCategory: "model",
+    filterSearch: "",
+    leadId: "keras-sequential",
+    summary: "从搭 Sequential 网络、编译、训练到早停回调，理解深度学习代码的基础骨架。",
+    focus: ["Sequential", "Dense", "compile", "fit", "EarlyStopping"],
+    objectives: [
+      "理解模型结构、损失函数和优化器分别负责什么。",
+      "知道 fit 过程中 epoch、batch_size、validation_split 的意义。",
+      "掌握 EarlyStopping 作为第一层训练保护。",
+    ],
+    commandIds: [
+      "keras-sequential",
+      "keras-dense",
+      "keras-compile",
+      "keras-fit",
+      "keras-earlystopping",
+    ],
+    dataset: {
+      kind: "array",
+      title: "二维特征分类样例",
+      note: "每一行代表一个样本，两列特征共同决定是否属于正类。",
+      rows: [
+        ["0.1", "1.2", "0"],
+        ["0.4", "1.8", "0"],
+        ["1.3", "2.4", "1"],
+        ["1.6", "2.9", "1"],
+      ],
+    },
+    walkthrough: [
+      {
+        title: "先搭一个最小网络",
+        commandId: "keras-sequential",
+        why: "Sequential 最适合初学时理解“层是一层层叠起来的”。",
+        code: `model = keras.Sequential([
+    keras.layers.Dense(16, activation="relu", input_shape=(2,)),
+    keras.layers.Dense(1, activation="sigmoid")
+])`,
+        output: "网络会有一个隐藏层和一个二分类输出层，适合做最小可训练骨架。",
+      },
+      {
+        title: "编译模型",
+        commandId: "keras-compile",
+        why: "compile 决定模型用什么损失、优化器和评估指标。",
+        code: `model.compile(
+    optimizer="adam",
+    loss="binary_crossentropy",
+    metrics=["accuracy"]
+)`,
+        output: "此时模型结构已经固定，但还没有开始真正训练。",
+      },
+      {
+        title: "训练时加早停",
+        commandId: "keras-fit",
+        why: "fit 是训练主过程，EarlyStopping 是最常见的过拟合保护。",
+        code: `callback = keras.callbacks.EarlyStopping(
+    monitor="val_loss",
+    patience=3,
+    restore_best_weights=True
+)
+history = model.fit(
+    X_train, y_train,
+    validation_split=0.2,
+    epochs=30,
+    callbacks=[callback]
+)`,
+        output: "训练会在验证损失不再改善时提前停止，并回退到最佳权重。",
+      },
+    ],
+    takeaways: [
+      "Sequential 先帮你理解训练骨架，再去看更复杂的 Functional API。",
+      "compile 决定训练规则，fit 才是真正跑数据的地方。",
+      "回调是深度学习里很值得尽早掌握的能力。",
+    ],
+    practice: "把输出层改成多分类写法，并思考 loss 和 activation 该怎么改。",
+  },
+  {
+    id: "tutorial-gensim-topic",
+    title: "Gensim 主题模型入门",
+    level: "进阶",
+    duration: "20 分钟",
+    library: "gensim",
+    filterLibrary: "gensim",
+    filterCategory: "text",
+    filterSearch: "",
+    leadId: "gen-dictionary",
+    summary: "从词典、词袋到 LDA 主题输出，理解文本主题建模的最小闭环。",
+    focus: ["Dictionary", "doc2bow", "TfidfModel", "LdaModel"],
+    objectives: [
+      "知道词典、语料和主题模型三者之间的关系。",
+      "理解 doc2bow 为什么会把文本变成编号加词频。",
+      "学会读 print_topics 输出的主题关键词。",
+    ],
+    commandIds: [
+      "gen-dictionary",
+      "gen-doc2bow",
+      "gen-tfidfmodel",
+      "gen-ldamodel",
+      "gen-ldamodel-print-topics",
+    ],
+    dataset: {
+      kind: "text",
+      title: "短文本语料样例",
+      note: "每一行都是一条已经完成基础分词的文本。",
+      blocks: [
+        "['data', 'analysis', 'python', 'pandas']",
+        "['machine', 'learning', 'model', 'pipeline']",
+        "['python', 'visualization', 'seaborn', 'matplotlib']",
+      ],
+    },
+    walkthrough: [
+      {
+        title: "先建词典",
+        commandId: "gen-dictionary",
+        why: "词典负责把每个 token 映射成一个稳定编号，是后续所有语料表示的基础。",
+        code: `dictionary = corpora.Dictionary(tokenized_docs)`,
+        output: "dictionary 会保存 token 到 id 的映射，例如 python -> 0，pandas -> 1。",
+      },
+      {
+        title: "把文本转成词袋向量",
+        commandId: "gen-doc2bow",
+        why: "主题模型不直接吃字符串，而是吃“词编号 + 词频”的稀疏表示。",
+        code: `corpus = [dictionary.doc2bow(doc) for doc in tokenized_docs]`,
+        output: "每篇文档会变成类似 [(0, 1), (4, 2)] 的结构，表示某个词出现了几次。",
+      },
+      {
+        title: "训练 LDA 并读主题",
+        commandId: "gen-ldamodel",
+        why: "LDA 的目的不是预测，而是帮助你看文档里潜在有哪些主题结构。",
+        code: `lda = models.LdaModel(corpus=corpus, id2word=dictionary, num_topics=2)
+lda.print_topics()`,
+        output: "你会看到每个主题下最有代表性的词及其权重，据此去给主题命名。",
+      },
+    ],
+    takeaways: [
+      "主题模型更像“理解语料结构”，不是监督学习分类器。",
+      "词典和语料表示一旦稳定，后续替换 TF-IDF 或 LDA 会很顺。",
+      "print_topics 只是起点，真正解释主题还要结合原文抽样。",
+    ],
+    practice: "给语料再补 5 条文本，重新训练后比较主题词是否更稳定。",
+  },
+  {
+    id: "tutorial-visual-story",
+    title: "Seaborn / Matplotlib 报表图表教程",
+    level: "入门",
+    duration: "19 分钟",
+    library: "all",
+    filterLibrary: "all",
+    filterCategory: "plot",
+    filterSearch: "",
+    leadId: "sns-barplot",
+    summary: "从整理长表、画统计图到布置多子图和导出，完成一张更像报告的可视化页面。",
+    focus: ["melt", "barplot", "subplots", "savefig"],
+    objectives: [
+      "理解为什么 seaborn 更偏好长表结构。",
+      "掌握一张图和一页图看板的基本布局思路。",
+      "知道可视化的最后一步通常是导出，而不是停在 show。",
+    ],
+    commandIds: ["pd-melt", "sns-barplot", "sns-heatmap", "plt-subplots", "plt-savefig"],
+    dataset: {
+      kind: "table",
+      title: "月度销售汇总样例",
+      note: "这里假设你已经有每个月、每个渠道的销售额汇总。",
+      columns: ["month", "online", "store", "partner"],
+      rows: [
+        ["Jan", "120", "90", "60"],
+        ["Feb", "140", "95", "72"],
+        ["Mar", "165", "102", "81"],
+      ],
+    },
+    walkthrough: [
+      {
+        title: "先把宽表变成长表",
+        commandId: "pd-melt",
+        why: "很多 seaborn 接口更喜欢把维度放到列里，而不是分散成多列。",
+        code: `long_df = df.melt(
+    id_vars="month",
+    var_name="channel",
+    value_name="sales"
+)`,
+        output: "输出会变成 month、channel、sales 三列，更适合直接喂给 barplot。",
+      },
+      {
+        title: "用 seaborn 快速画统计图",
+        commandId: "sns-barplot",
+        why: "barplot 可以直接按分类维度比较多组摘要值，是报表里最常见的图之一。",
+        code: `sns.barplot(data=long_df, x="month", y="sales", hue="channel")`,
+        output: "你会得到按月份分组、按渠道分色的柱状图，适合做趋势对比。",
+      },
+      {
+        title: "用 subplots 做成一页看板",
+        commandId: "plt-subplots",
+        why: "当你需要柱状图、热力图放在同一页时，subplots 是最稳的布局入口。",
+        code: `fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+sns.barplot(data=long_df, x="month", y="sales", hue="channel", ax=axes[0])
+sns.heatmap(pivot_df, annot=True, cmap="crest", ax=axes[1])
+fig.tight_layout()`,
+        output: "同一张画布会同时放两张图，更接近汇报时的一页分析看板。",
+      },
+      {
+        title: "记得导出结果",
+        commandId: "plt-savefig",
+        why: "真正要交付时，保存图像往往比临时 show 更重要。",
+        code: `plt.savefig("sales-dashboard.png", dpi=160, bbox_inches="tight")`,
+        output: "输出文件会更适合贴进周报、PPT 或文档，而不是只停在交互窗口里。",
+      },
+    ],
+    takeaways: [
+      "长表结构是把 seaborn 用顺的关键门槛之一。",
+      "多子图布局要优先考虑信息组织，而不只是把图塞进去。",
+      "导出质量、尺寸和边距，属于可视化最后一公里。",
+    ],
+    practice: "把柱状图换成折线图，并增加一个图例位置优化步骤。",
+  },
+]
+
 const createCommand = ({ when, tips, keywords, related, ...rest }) =>
   buildCommandRecord({
     when: when ?? rest.summary,
